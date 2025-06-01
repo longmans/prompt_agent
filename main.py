@@ -8,70 +8,76 @@ from a2a.types import (
     AgentCard,
     AgentSkill,
 )
-from agent_executor import (
-    HelloWorldAgentExecutor,  # type: ignore[import-untyped]
+from prompt_optimizer_executor import (
+    PromptOptimizerAgentExecutor,  # type: ignore[import-untyped]
 )
 
 
 if __name__ == '__main__':
     # --8<-- [start:AgentSkill]
-    skill = AgentSkill(
-        id='hello_world',
-        name='Returns hello world',
-        description='just returns hello world',
-        tags=['hello world'],
-        examples=['hi', 'hello world'],
+    basic_skill = AgentSkill(
+        id='prompt_optimization',
+        name='Prompt优化服务',
+        description='通过多Agent协作优化prompt，包括生成、评估和改进',
+        tags=['prompt engineering', 'optimization', 'multi-agent'],
+        examples=[
+            '为软件开发者优化代码生成prompt',
+            '为客服人员优化对话prompt',
+            '为内容创作者优化写作prompt'
+        ],
     )
     # --8<-- [end:AgentSkill]
 
-    extended_skill = AgentSkill(
-        id='super_hello_world',
-        name='Returns a SUPER Hello World',
-        description='A more enthusiastic greeting, only for authenticated users.',
-        tags=['hello world', 'super', 'extended'],
-        examples=['super hi', 'give me a super hello'],
+    advanced_skill = AgentSkill(
+        id='advanced_prompt_optimization',
+        name='高级Prompt优化服务',
+        description='包含深度分析、多轮优化和自定义评估指标的高级prompt优化服务',
+        tags=['prompt engineering', 'optimization', 'multi-agent', 'advanced', 'deep-analysis'],
+        examples=[
+            '进行多轮迭代的prompt优化',
+            '基于特定业务场景的定制化优化',
+            '包含性能基准测试的prompt评估'
+        ],
     )
 
     # --8<-- [start:AgentCard]
-    # This will be the public-facing agent card
+    # 公开的agent卡片
     public_agent_card = AgentCard(
-        name='Hello World Agent',
-        description='Just a hello world agent',
+        name='Prompt优化器 Agent',
+        description='基于多Agent协作的智能Prompt优化系统，帮助用户生成、评估和改进各种场景下的prompt',
         url='http://localhost:9999/',
         version='1.0.0',
         defaultInputModes=['text'],
         defaultOutputModes=['text'],
         capabilities=AgentCapabilities(streaming=True),
-        skills=[skill],  # Only the basic skill for the public card
+        skills=[basic_skill],  # 基础技能
         supportsAuthenticatedExtendedCard=True,
     )
     # --8<-- [end:AgentCard]
 
-    # This will be the authenticated extended agent card
-    # It includes the additional 'extended_skill'
-    specific_extended_agent_card = public_agent_card.model_copy(
+    # 认证扩展agent卡片
+    # 包含高级功能
+    extended_agent_card = public_agent_card.model_copy(
         update={
-            'name': 'Hello World Agent - Extended Edition',  # Different name for clarity
-            'description': 'The full-featured hello world agent for authenticated users.',
-            'version': '1.0.1',  # Could even be a different version
-            # Capabilities and other fields like url, defaultInputModes, defaultOutputModes,
-            # supportsAuthenticatedExtendedCard are inherited from public_agent_card unless specified here.
+            'name': 'Prompt优化器 Agent - 专业版',
+            'description': '专业级Prompt优化系统，提供深度分析、多轮优化和定制化服务',
+            'version': '1.1.0',
             'skills': [
-                skill,
-                extended_skill,
-            ],  # Both skills for the extended card
+                basic_skill,
+                advanced_skill,
+            ],  # 包含基础和高级技能
         }
     )
 
     request_handler = DefaultRequestHandler(
-        agent_executor=HelloWorldAgentExecutor(),
+        agent_executor=PromptOptimizerAgentExecutor(),
         task_store=InMemoryTaskStore(),
     )
 
     server = A2AStarletteApplication(
         agent_card=public_agent_card,
         http_handler=request_handler,
-        extended_agent_card=specific_extended_agent_card,
+        extended_agent_card=extended_agent_card,
     )
 
     uvicorn.run(server.build(), host='0.0.0.0', port=9999)
