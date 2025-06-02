@@ -14,16 +14,17 @@ from typing import Dict, List, Any, Iterator, Tuple, Optional
 from datetime import datetime
 from prompt_optimizer import PromptOptimizerWorkflow, PromptRequest, ModelFactory
 from dotenv import load_dotenv
+# 加载环境变量
+load_dotenv()
 
 # 配置日志
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO if os.getenv('LOG_LEVEL').lower() != 'debug' else logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# 加载环境变量
-load_dotenv()
+
 
 class SessionState:
     """会话状态管理类，避免使用全局变量"""
