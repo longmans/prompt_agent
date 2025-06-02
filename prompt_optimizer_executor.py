@@ -129,20 +129,21 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
             return {
                 "role": "software developers",
                 "basic_requirements": "编写高质量、可维护的代码，包括函数、类和API设计",
-                "examples": [
-                    {"input": "Write a function", "output": "def example_function():"},
-                    {"input": "Create a class", "output": "class ExampleClass:"}
-                ],
+                "examples": [],  # 不提供示例
                 "model_type": "openai"
             }
         elif any(keyword in content for keyword in ['writer', 'author', 'content', 'writing']):
             return {
                 "role": "content writers",
                 "basic_requirements": "创作引人入胜、结构清晰的内容，包括文章、博客和营销文案",
-                "examples": [
-                    {"input": "Write an article", "output": "Here's a compelling article..."},
-                    {"input": "Create a blog post", "output": "Welcome to our blog..."}
-                ],
+                "examples": [],  # 不提供示例
+                "model_type": "openai"
+            }
+        elif any(keyword in content for keyword in ['data', 'analysis', 'scientist', 'analytics']):
+            return {
+                "role": "data scientists",
+                "basic_requirements": "进行数据分析和可视化，生成清晰的见解报告",
+                "examples": [],  # 不提供示例
                 "model_type": "openai"
             }
         else:
@@ -173,7 +174,7 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
         
         # 验证示例字段（如果提供）
         examples = request_data.get("examples", [])
-        if examples:  # 只在提供示例时验证
+        if examples:  # 只在有示例时验证
             if not isinstance(examples, list):
                 return "examples字段必须是数组"
             
@@ -190,6 +191,14 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
                 
                 if not example["input"].strip() or not example["output"].strip():
                     return f"示例 {i+1} 的 'input' 和 'output' 不能为空"
+                
+                # 验证input是否为有效的JSON对象
+                try:
+                    input_json = json.loads(example["input"])
+                    if not isinstance(input_json, dict):
+                        return f"示例 {i+1} 的 'input' 必须是有效的JSON对象"
+                except json.JSONDecodeError:
+                    return f"示例 {i+1} 的 'input' 必须是有效的JSON格式"
         
         return None
 

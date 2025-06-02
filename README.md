@@ -152,8 +152,8 @@ python main.py
         "model_type": "gemini",
         "examples": [
           {
-            "input": "Write a function to calculate fibonacci",
-            "output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)"
+            "input": "{\"function_name\": \"calculate_fibonacci\", \"input_type\": \"int\", \"output_type\": \"int\", \"description\": \"计算斐波那契数列第n个数\"}",
+            "output": "def calculate_fibonacci(n: int) -> int:\n    \"\"\"计算斐波那契数列第n个数\n    Args:\n        n: 要计算的位置\n    Returns:\n        int: 斐波那契数\n    \"\"\"\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)"
           }
         ],
         "additional_requirements": "Include type hints and documentation"
@@ -176,8 +176,8 @@ python main.py
         "model_type": "openai",
         "examples": [
           {
-            "input": "Write a blog post intro about AI",
-            "output": "Artificial Intelligence is revolutionizing how we work and interact with technology..."
+            "input": "{\"topic\": \"AI trends\", \"target_audience\": \"tech professionals\", \"tone\": \"professional\", \"word_count\": \"1000\"}",
+            "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nArtificial Intelligence is revolutionizing how we work..."
           }
         ],
         "additional_requirements": "Engaging and accessible tone"
@@ -185,6 +185,48 @@ python main.py
     }
   ]
 }
+```
+
+### 📝 示例格式说明
+
+每个示例的input必须是一个JSON对象，包含变量名和对应的值。这些变量将在生成的prompt中使用。
+
+例如，软件开发示例：
+```json
+{
+  "input": {
+    "function_name": "validate_email",
+    "input_type": "str",
+    "output_type": "bool",
+    "description": "验证邮箱地址格式"
+  },
+  "output": "def validate_email(email: str) -> bool:\n    ..."
+}
+```
+
+内容创作示例：
+```json
+{
+  "input": {
+    "topic": "sustainability",
+    "target_audience": "general public",
+    "tone": "casual",
+    "word_count": "200"
+  },
+  "output": "🌱 Small changes, BIG impact! ..."
+}
+```
+
+生成的prompt将包含这些变量，例如：
+```
+请创建一个名为{function_name}的函数，接受{input_type}类型的输入，返回{output_type}类型的输出。
+函数的功能是：{description}
+```
+
+或者：
+```
+写一篇关于{topic}的博客文章，面向{target_audience}读者群体。
+使用{tone}的语气，字数约{word_count}字。
 ```
 
 ### 支持的用户角色

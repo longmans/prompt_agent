@@ -89,12 +89,22 @@ async def demo_software_development_openai():
         basic_requirements="编写健壮、可扩展的Python代码，重点关注错误处理和文档",
         examples=[  # 可选的示例
             {
-                "input": "Write a function to validate email addresses",
-                "output": "import re\n\ndef validate_email(email):\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return re.match(pattern, email) is not None"
+                "input": json.dumps({
+                    "function_name": "validate_email",
+                    "input_type": "str",
+                    "output_type": "bool",
+                    "description": "验证邮箱地址格式"
+                }),
+                "output": "def validate_email(email: str) -> bool:\n    \"\"\"验证邮箱地址格式的有效性\n    Args:\n        email: 要验证的邮箱地址\n    Returns:\n        bool: 邮箱格式是否有效\n    \"\"\"\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return re.match(pattern, email) is not None"
             },
             {
-                "input": "Create a class for handling database connections",
-                "output": "class DatabaseConnection:\n    def __init__(self, host, database, user, password):\n        self.host = host\n        self.database = database\n        self.user = user\n        self.password = password\n        self.connection = None"
+                "input": json.dumps({
+                    "class_name": "DatabaseConnection",
+                    "host": "localhost",
+                    "database": "mydb",
+                    "username": "admin"
+                }),
+                "output": "class DatabaseConnection:\n    def __init__(self, host: str = 'localhost', database: str = 'mydb', username: str = 'admin'):\n        self.host = host\n        self.database = database\n        self.username = username\n        self.connection = None"
             }
         ],
         additional_requirements="代码需要包含完整的类型提示和异常处理",
@@ -164,7 +174,7 @@ async def demo_customer_support():
 
 async def demo_content_creation():
     """演示为内容创作优化prompt"""
-    print("\n\n✍️ 演示：内容创作prompt优化 - Gemini模型")
+    print("\n\n✍️ 演示：内容创作prompt优化 - OpenAI模型")
     print("=" * 60)
     
     workflow = PromptOptimizerWorkflow()
@@ -174,12 +184,22 @@ async def demo_content_creation():
         basic_requirements="创作引人入胜、结构清晰的内容，包括博客文章和社交媒体帖子",
         examples=[  # 可选的示例
             {
-                "input": "Write a blog post about AI trends",
-                "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nAI continues to evolve rapidly..."
+                "input": json.dumps({
+                    "topic": "AI trends",
+                    "target_audience": "tech professionals",
+                    "tone": "professional",
+                    "word_count": "1000"
+                }),
+                "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nArtificial Intelligence continues to evolve rapidly, transforming industries and reshaping how we work..."
             },
             {
-                "input": "Create social media content about sustainability",
-                "output": "🌱 Small changes, BIG impact! Here are 3 easy sustainability tips..."
+                "input": json.dumps({
+                    "topic": "sustainability",
+                    "target_audience": "general public",
+                    "tone": "casual",
+                    "word_count": "200"
+                }),
+                "output": "🌱 Small changes, BIG impact! Here are 3 easy sustainability tips that anyone can follow to help protect our planet..."
             }
         ],
         additional_requirements="内容需要包含吸引人的标题和清晰的行动号召",

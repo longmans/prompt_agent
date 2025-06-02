@@ -1,13 +1,23 @@
 import json
 import os
+import logging
 from typing import Dict, List, TypedDict, Annotated, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, START, END, add_messages
 from dotenv import load_dotenv
 
 # 加载环境变量
 load_dotenv()
+
+# 配置日志
+logger = logging.getLogger(__name__)
+if not logger.handlers:  # 避免重复添加处理器
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 
 # 状态管理
@@ -28,7 +38,7 @@ class PromptOptimizerState(TypedDict):
 class PromptRequest:
     role: str
     basic_requirements: str  # 新增基本要求字段
-    examples: List[Dict[str, str]] = None  # 改为可选
+    examples: List[Dict[str, str]] = field(default_factory=list)  # 默认为空列表
     additional_requirements: str = ""  # 保持可选
     model_type: str = "openai"  # 默认使用openai
 
@@ -173,41 +183,86 @@ class PromptGeneratorAgent:
     
     async def generate_prompt_from_examples(self, state: PromptOptimizerState) -> Dict:
         """根据示例生成能产生这些输出的prompt"""
+        # 如果没有示例，生成基本的prompt
         if not state.get('examples'):
-            raise ValueError("Examples are required for generating prompt")
+            basic_prompt = f"""
+            Generate a prompt for {state['role']}.
             
+            Basic requirements: {state.get('basic_requirements', '')}
+            
+            The prompt should be:
+            1. Clear and specific for {state['role']}
+            2. Follow the basic requirements
+            3. Easy to understand and use
+            
+            Format your response as:
+            
+            PROMPT:
+            [Your generated prompt here]
+            
+            DESIGN_PRINCIPLES:
+            [Brief explanation of the prompt design]
+            """
+            
+            try:
+                response = await self.model.ainvoke([HumanMessage(content=basic_prompt)])
+                prompt_content = response.content if hasattr(response, 'content') else str(response)
+                current_prompt = self._extract_prompt_from_response(prompt_content)
+                
+                return {
+                    "messages": [response],
+                    "current_prompt": current_prompt,
+                    "step": "prompt_generated"
+                }
+            except Exception as e:
+                raise RuntimeError(f"Failed to generate basic prompt: {str(e)}")
+            
+        # 提取所有变量名
+        all_variables = set()
+        for example in state['examples']:
+            if isinstance(example, dict) and 'input' in example:
+                try:
+                    variables = json.loads(example['input'])
+                    all_variables.update(variables.keys())
+                except json.JSONDecodeError:
+                    raise ValueError(f"Example input must be a valid JSON object: {example['input']}")
+        
+        # 格式化示例文本
         examples_text = "\n\n".join([
-            f"Example {i+1}:\nInput: {ex.get('input', '')}\nOutput: {ex.get('output', '')}"
+            f"Example {i+1}:\nVariables: {ex.get('input', '')}\nOutput: {ex.get('output', '')}"
             for i, ex in enumerate(state['examples']) if isinstance(ex, dict)
         ])
         
         if not examples_text.strip():
             raise ValueError("Valid examples with 'input' and 'output' keys are required")
         
+        # 构建生成提示
         generation_prompt = f"""
-        Based on these {len(state['examples'])} examples of how I want my prompt to work:
+        Based on these {len(state['examples'])} examples, generate a prompt that uses the following variables: {', '.join(sorted(all_variables))}.
+        The prompt should be designed to generate outputs similar to the examples when the variables are provided.
 
+        Examples:
         {examples_text}
 
-        Generate a prompt that could have generated the examples' outputs, and include a better set of examples.
-
         The target audience is {state['role']}.
+        Basic requirements: {state.get('basic_requirements', '')}
 
-        Provide:
-        1. A well-crafted prompt that would generate similar outputs
-        2. 3-5 additional high-quality examples that demonstrate the prompt's effectiveness
-        3. Brief explanation of the prompt's design principles
+        Generate a prompt that:
+        1. Uses ALL the identified variables in curly braces (e.g. {{variable_name}})
+        2. Produces outputs similar to the examples when variables are provided
+        3. Is clear and specific for {state['role']}
+        4. Follows the basic requirements
 
         Format your response as:
         
         PROMPT:
-        [Your generated prompt here]
+        [Your generated prompt here, using variables in curly braces]
         
         ADDITIONAL_EXAMPLES:
-        [New examples in the same input/output format]
+        [New examples with variable values and expected outputs]
         
         DESIGN_PRINCIPLES:
-        [Brief explanation]
+        [Brief explanation of how the variables are used]
         """
         
         try:
@@ -216,6 +271,12 @@ class PromptGeneratorAgent:
             
             # 解析生成的prompt
             current_prompt = self._extract_prompt_from_response(prompt_content)
+            
+            # 验证所有变量都在生成的prompt中使用
+            missing_vars = [var for var in all_variables if f"{{{var}}}" not in current_prompt]
+            if missing_vars:
+                # 如果有缺失的变量，添加到prompt末尾
+                current_prompt += f"\n\nAvailable variables: {', '.join(f'{{{var}}}' for var in sorted(all_variables))}"
             
             return {
                 "messages": [response],
@@ -498,7 +559,7 @@ class PromptOptimizerWorkflow:
         try:
             return await self.generator.generate_prompt_engineering_guide(state)
         except Exception as e:
-            print(f"Warning: Failed to generate guide: {str(e)}")
+            logger.warning(f"Warning: Failed to generate guide: {str(e)}")
             return {"step": "guide_skipped", "messages": []}
     
     async def _generate_prompt_node(self, state: PromptOptimizerState):
@@ -506,7 +567,7 @@ class PromptOptimizerWorkflow:
         try:
             return await self.generator.generate_prompt_from_examples(state)
         except Exception as e:
-            print(f"Error: Failed to generate prompt: {str(e)}")
+            logger.error(f"Error: Failed to generate prompt: {str(e)}")
             # 返回一个基本的prompt作为fallback
             return {
                 "current_prompt": "Please provide a clear and specific response to the user's request.",
@@ -518,7 +579,7 @@ class PromptOptimizerWorkflow:
         try:
             return await self.evaluator.generate_evaluation_guide(state)
         except Exception as e:
-            print(f"Warning: Failed to generate evaluation guide: {str(e)}")
+            logger.warning(f"Warning: Failed to generate evaluation guide: {str(e)}")
             return {"step": "eval_guide_skipped", "messages": []}
     
     async def _evaluate_prompt_node(self, state: PromptOptimizerState):
@@ -526,7 +587,7 @@ class PromptOptimizerWorkflow:
         try:
             return await self.evaluator.evaluate_prompt(state)
         except Exception as e:
-            print(f"Warning: Failed to evaluate prompt: {str(e)}")
+            logger.warning(f"Warning: Failed to evaluate prompt: {str(e)}")
             # 提供基本评估
             return {
                 "evaluations": state.get("evaluations", []) + ["Basic evaluation: The prompt appears functional but may need refinement."],
@@ -538,7 +599,7 @@ class PromptOptimizerWorkflow:
         try:
             return await self.improver.generate_improved_prompts(state)
         except Exception as e:
-            print(f"Warning: Failed to generate improvements: {str(e)}")
+            logger.warning(f"Warning: Failed to generate improvements: {str(e)}")
             # 如果改进失败，使用当前prompt作为alternative
             current_prompt = state.get('current_prompt', '')
             return {
@@ -573,16 +634,45 @@ class PromptOptimizerWorkflow:
         if not request.role.strip():
             raise ValueError("Role cannot be empty")
             
-        if not request.examples:
-            raise ValueError("At least one example is required")
+        # 验证示例（如果有）
+        if request.examples:
+            # 存储第一个示例的字段名
+            first_example_fields = None
             
-        for i, example in enumerate(request.examples):
-            if not isinstance(example, dict):
-                raise ValueError(f"Example {i+1} must be a dictionary")
-            if 'input' not in example or 'output' not in example:
-                raise ValueError(f"Example {i+1} must have 'input' and 'output' keys")
-            if not example['input'].strip() or not example['output'].strip():
-                raise ValueError(f"Example {i+1} input and output cannot be empty")
+            for i, example in enumerate(request.examples):
+                if not isinstance(example, dict):
+                    raise ValueError(f"Example {i+1} must be a dictionary")
+                if 'input' not in example or 'output' not in example:
+                    raise ValueError(f"Example {i+1} must have 'input' and 'output' keys")
+                if not example['input'].strip() or not example['output'].strip():
+                    raise ValueError(f"Example {i+1} input and output cannot be empty")
+                
+                # 解析input JSON并验证字段名一致性
+                try:
+                    input_data = json.loads(example['input']) if isinstance(example['input'], str) else example['input']
+                    if not isinstance(input_data, dict):
+                        raise ValueError(f"Example {i+1} input must be a valid JSON object")
+                    
+                    # 获取当前示例的字段名集合
+                    current_fields = set(input_data.keys())
+                    
+                    # 如果是第一个示例，保存其字段名
+                    if first_example_fields is None:
+                        first_example_fields = current_fields
+                    # 否则比较字段名是否一致
+                    elif current_fields != first_example_fields:
+                        # 找出不一致的字段
+                        missing_fields = first_example_fields - current_fields
+                        extra_fields = current_fields - first_example_fields
+                        error_msg = f"Example {i+1} has inconsistent field names with the first example."
+                        if missing_fields:
+                            error_msg += f" Missing fields: {', '.join(missing_fields)}."
+                        if extra_fields:
+                            error_msg += f" Extra fields: {', '.join(extra_fields)}."
+                        raise ValueError(error_msg)
+                        
+                except json.JSONDecodeError:
+                    raise ValueError(f"Example {i+1} input must be a valid JSON object")
         
         initial_state = PromptOptimizerState(
             messages=[],

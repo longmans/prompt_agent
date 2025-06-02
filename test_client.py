@@ -24,8 +24,13 @@ async def test_prompt_optimization(client: A2AClient, logger: logging.Logger) ->
         "basic_requirements": "编写高质量、可维护的Python代码，包括函数、类和API设计",
         "examples": [
             {
-                "input": "Write a function to calculate fibonacci numbers",
-                "output": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)"
+                "input": json.dumps({
+                    "function_name": "calculate_fibonacci",
+                    "input_type": "int",
+                    "output_type": "int",
+                    "description": "计算斐波那契数列第n个数"
+                }),
+                "output": "def fibonacci(n: int) -> int:\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)"
             }
         ],
         "model_type": "openai"
@@ -53,8 +58,14 @@ async def test_prompt_optimization(client: A2AClient, logger: logging.Logger) ->
         "basic_requirements": "创作引人入胜、结构清晰的内容，包括博客文章和社交媒体帖子",
         "examples": [
             {
-                "input": "Write a blog post about AI trends",
-                "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nAI continues to evolve rapidly..."
+                "input": json.dumps({
+                    "topic": "AI trends",
+                    "target_audience": "tech professionals",
+                    "tone": "professional",
+                    "word_count": "1000",
+                    "format": "blog post"
+                }),
+                "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nArtificial Intelligence continues to evolve rapidly..."
             }
         ],
         "model_type": "openai"
