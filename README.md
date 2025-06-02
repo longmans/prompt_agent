@@ -1,154 +1,156 @@
-# Prompt优化器 Agent
+# Prompt Optimizer Agent
 
-基于多Agent协作的智能Prompt优化系统，使用LangGraph实现工作流编排，支持多种大语言模型，并提供A2A（Agent-to-Agent）服务接口和Web界面。
+> **English | [中文](README_CN.md)**
 
-## ✨ 核心功能
+An intelligent Prompt optimization system based on multi-Agent collaboration, implementing workflow orchestration with LangGraph, supporting multiple large language models, and providing both A2A (Agent-to-Agent) service interfaces and Web UI.
 
-- 🤖 **多Agent协作**: 基于LangGraph的专业化Agent工作流
-- 🔄 **7步优化流程**: 完整的prompt工程优化管道
-- 🌐 **多模型支持**: 支持Google Gemini和OpenAI GPT模型
-- 🚀 **A2A服务**: 标准化的Agent-to-Agent接口
-- 🌟 **Web界面**: 基于Gradio的流式交互界面
-- 📊 **智能评估**: 自动生成评估指标和改进建议
-- 🎯 **角色专项**: 针对不同用户角色定制优化策略
-- 🔒 **代理支持**: 内置代理配置，支持网络受限环境
-- 📝 **智能解析**: 支持JSON和自然语言输入
-- 🛡️ **健壮性**: 完善的错误处理和状态管理
-- 🔍 **示例验证**: 字段名一致性检查和格式验证
-- 📋 **会话管理**: 智能状态管理和历史记录
+## ✨ Core Features
 
-## 🔧 支持的模型
+- 🤖 **Multi-Agent Collaboration**: Professional Agent workflow based on LangGraph
+- 🔄 **7-Step Optimization Process**: Complete prompt engineering optimization pipeline
+- 🌐 **Multi-Model Support**: Support for Google Gemini and OpenAI GPT models
+- 🚀 **A2A Service**: Standardized Agent-to-Agent interface
+- 🌟 **Web Interface**: Gradio-based streaming interactive interface
+- 📊 **Intelligent Evaluation**: Automatically generate evaluation metrics and improvement suggestions
+- 🎯 **Role-Specific**: Customized optimization strategies for different user roles
+- 🔒 **Proxy Support**: Built-in proxy configuration for network-restricted environments
+- 📝 **Smart Parsing**: Support for JSON and natural language input
+- 🛡️ **Robustness**: Comprehensive error handling and state management
+- 🔍 **Example Validation**: Field name consistency checking and format validation
+- 📋 **Session Management**: Intelligent state management and history tracking
 
-| 模型提供商 | 模型名称 | 模型类型标识 | 配置要求 |
-|------------|----------|--------------|----------|
+## 🔧 Supported Models
+
+| Provider | Model Name | Model Type ID | Configuration Required |
+|----------|------------|---------------|----------------------|
 | Google | Gemini 2.0 Flash | `gemini` | `GOOGLE_API_KEY` |
 | OpenAI | GPT-4o-mini | `openai` | `OPENAI_API_KEY` |
 
-## 🌐 代理配置
+## 🌐 Proxy Configuration
 
-系统内置代理支持，方便在网络受限环境中使用：
+The system has built-in proxy support for convenient use in network-restricted environments:
 
-### 环境变量配置
+### Environment Variable Configuration
 
 ```bash
-# 在 .env 文件中配置代理
+# Configure proxy in .env file
 HTTPS_PROXY=http://127.0.0.1:7890
 HTTP_PROXY=http://127.0.0.1:7890
 
-# 或者在启动时设置
+# Or set when starting
 export HTTPS_PROXY=http://127.0.0.1:7890
 export HTTP_PROXY=http://127.0.0.1:7890
 python main.py
 ```
 
-### 默认代理设置
+### Default Proxy Settings
 
-如果未设置环境变量，系统默认使用：
-- HTTPS代理: `http://127.0.0.1:7890`
-- HTTP代理: `http://127.0.0.1:7890`
+If environment variables are not set, the system defaults to:
+- HTTPS Proxy: `http://127.0.0.1:7890`
+- HTTP Proxy: `http://127.0.0.1:7890`
 
-### 常见代理软件端口
+### Common Proxy Software Ports
 
-| 代理软件 | 默认端口 | 配置示例 |
-|----------|----------|----------|
+| Proxy Software | Default Port | Configuration Example |
+|----------------|--------------|----------------------|
 | Clash | 7890 | `http://127.0.0.1:7890` |
 | V2Ray | 1081 | `http://127.0.0.1:1081` |
 | SSR | 1080 | `http://127.0.0.1:1080` |
 
-## 📋 7步优化流程
+## 📋 7-Step Optimization Process
 
-1. **生成工程指导** - 为特定角色生成详细的prompt工程指南
-2. **分析角色和要求** - 理解用户角色和基本要求
-3. **生成初始Prompt** - 根据角色和要求生成基础prompt
-4. **创建评估框架** - 创建针对性的prompt评估框架
-5. **执行Prompt评估** - 对生成的prompt进行全面评估
-6. **生成改进方案** - 提供3个不同的优化版本
-7. **选择最佳版本** - 自动推荐或用户选择最终prompt
+1. **Generate Engineering Guide** - Generate detailed prompt engineering guidelines for specific roles
+2. **Analyze Role and Requirements** - Understand user roles and basic requirements
+3. **Generate Initial Prompt** - Generate basic prompt based on role and requirements
+4. **Create Evaluation Framework** - Create targeted prompt evaluation framework
+5. **Execute Prompt Evaluation** - Comprehensive quality analysis of the prompt
+6. **Generate Improvement Plans** - Provide 3 different optimization versions
+7. **Select Best Version** - Automatically recommend or user-select final prompt
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 环境配置
+### Environment Setup
 
-1. **克隆项目**
+1. **Clone Project**
 ```bash
 git clone <repository-url>
 cd prompt_agent
 ```
 
-2. **安装依赖**
+2. **Install Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **配置API密钥和服务器**
+3. **Configure API Keys and Server**
 ```bash
-# 复制配置模板
+# Copy configuration template
 cp config_example.env .env
 
-# 编辑.env文件，添加你的API密钥和服务器设置
+# Edit .env file, add your API keys and server settings
 GOOGLE_API_KEY=your_google_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here  # 可选
+OPENAI_API_KEY=your_openai_api_key_here  # Optional
 
-# 服务器配置
+# Server configuration
 SERVER_HOST=0.0.0.0
 SERVER_PORT=9999
 LOG_LEVEL=info
 
-# 代理配置（可选，默认使用 http://127.0.0.1:7890）
+# Proxy configuration (optional, defaults to http://127.0.0.1:7890)
 HTTPS_PROXY=http://127.0.0.1:7890
 HTTP_PROXY=http://127.0.0.1:7890
 
-# Web界面配置
+# Web interface configuration
 WEB_HOST=0.0.0.0
 WEB_PORT=7860
 ```
 
-### 启动服务
+### Starting Services
 
-#### A2A服务 (推荐)
+#### A2A Service (Recommended)
 ```bash
 python main.py
 ```
-服务将在 http://localhost:9999 启动
+Service will start at http://localhost:9999
 
-#### Web界面
+#### Web Interface
 ```bash
 python web.py
 ```
-Web界面将在 http://localhost:7860 启动
+Web interface will start at http://localhost:7860
 
-#### 开发模式
+#### Development Mode
 ```bash
-# 启用热重载和调试日志
+# Enable hot reload and debug logging
 export RELOAD=true
 export LOG_LEVEL=debug
 python main.py
 ```
 
-## 🖥️ Web界面功能
+## 🖥️ Web Interface Features
 
-### 🚀 Prompt优化页面
-- **流式处理**: 实时显示优化进度
-- **多格式支持**: JSON和文本格式示例输入
-- **实时验证**: 输入参数自动验证
-- **结果展示**: 格式化的优化结果显示
+### 🚀 Prompt Optimization Page
+- **Streaming Processing**: Real-time optimization progress display
+- **Multi-Format Support**: JSON and text format example input
+- **Real-time Validation**: Automatic input parameter validation
+- **Result Display**: Formatted optimization result display
 
-### 🔧 手动验证页面
-- **变量管理**: 自动提取和验证prompt变量
-- **实时预览**: 变量替换后的prompt预览
-- **错误提示**: 详细的验证错误信息
-- **变量提示**: 智能的变量定义建议
+### 🔧 Manual Validation Page
+- **Variable Management**: Automatic extraction and validation of prompt variables
+- **Real-time Preview**: Preview of prompt after variable replacement
+- **Error Messages**: Detailed validation error information
+- **Variable Hints**: Intelligent variable definition suggestions
 
-### 📖 使用说明页面
-- **完整文档**: 详细的使用指南
-- **示例展示**: 多种格式的输入示例
-- **最佳实践**: Prompt工程最佳实践指导
+### 📖 Usage Guide Page
+- **Complete Documentation**: Detailed usage guidelines
+- **Example Showcase**: Multiple input format examples
+- **Best Practices**: Prompt engineering best practice guidance
 
-## 📖 使用方法
+## 📖 Usage Methods
 
-### 快速开始示例
+### Quick Start Example
 
-最简单的方式是直接发送关键词：
+The simplest way is to directly send keywords:
 
 ```json
 {
@@ -161,31 +163,31 @@ python main.py
 }
 ```
 
-系统会自动为软件开发者角色生成基础配置。
+The system will automatically generate basic configuration for the software developer role.
 
-### A2A接口调用
+### A2A Interface Call
 
-发送POST请求到 `http://localhost:9999/` 
+Send POST request to `http://localhost:9999/` 
 
-**标准请求格式:**
+**Standard Request Format:**
 ```json
 {
   "messages": [
     {
       "role": "user", 
       "content": {
-        "role": "目标用户角色",
-        "basic_requirements": "基本任务要求",
-        "examples": [...],  // 可选
-        "additional_requirements": "额外要求",  // 可选
-        "model_type": "模型类型"  // 可选，默认openai
+        "role": "Target user role",
+        "basic_requirements": "Basic task requirements",
+        "examples": [...],  // Optional
+        "additional_requirements": "Additional requirements",  // Optional
+        "model_type": "Model type"  // Optional, defaults to openai
       }
     }
   ]
 }
 ```
 
-### 🤖 Gemini模型示例
+### 🤖 Gemini Model Example
 
 ```json
 {
@@ -194,12 +196,12 @@ python main.py
       "role": "user",
       "content": {
         "role": "software developers",
-        "basic_requirements": "编写高质量、可维护的Python代码，包括函数、类和API设计",
+        "basic_requirements": "Write high-quality, maintainable Python code, including functions, classes, and API design",
         "model_type": "gemini",
         "examples": [
           {
-            "input": "{\"function_name\": \"calculate_fibonacci\", \"input_type\": \"int\", \"output_type\": \"int\", \"description\": \"计算斐波那契数列第n个数\"}",
-            "output": "def calculate_fibonacci(n: int) -> int:\n    \"\"\"计算斐波那契数列第n个数\n    Args:\n        n: 要计算的位置\n    Returns:\n        int: 斐波那契数\n    \"\"\"\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)"
+            "input": "{\"function_name\": \"calculate_fibonacci\", \"input_type\": \"int\", \"output_type\": \"int\", \"description\": \"Calculate the nth Fibonacci number\"}",
+            "output": "def calculate_fibonacci(n: int) -> int:\n    \"\"\"Calculate the nth Fibonacci number\n    Args:\n        n: Position to calculate\n    Returns:\n        int: Fibonacci number\n    \"\"\"\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)"
           }
         ],
         "additional_requirements": "Include type hints and documentation"
@@ -209,7 +211,7 @@ python main.py
 }
 ```
 
-### 🧠 OpenAI模型示例
+### 🧠 OpenAI Model Example
 
 ```json
 {
@@ -218,7 +220,7 @@ python main.py
       "role": "user", 
       "content": {
         "role": "content creators",
-        "basic_requirements": "创作引人入胜、结构清晰的博客文章和营销文案",
+        "basic_requirements": "Create engaging, well-structured blog articles and marketing copy",
         "model_type": "openai",
         "examples": [
           {
@@ -233,12 +235,12 @@ python main.py
 }
 ```
 
-### 📝 示例格式说明
+### 📝 Example Format Description
 
-#### 字段名一致性要求
-每个示例的input必须是一个JSON对象，**所有示例的input字段名必须保持一致**：
+#### Field Name Consistency Requirements
+Each example's input must be a JSON object, **all examples' input field names must be consistent**:
 
-✅ **正确示例**（字段名一致）：
+✅ **Correct Example** (consistent field names):
 ```json
 [
   {
@@ -252,7 +254,7 @@ python main.py
 ]
 ```
 
-❌ **错误示例**（字段名不一致）：
+❌ **Incorrect Example** (inconsistent field names):
 ```json
 [
   {
@@ -260,15 +262,15 @@ python main.py
     "output": "def validate_email(email: str) -> bool: ..."
   },
   {
-    "input": "{\"method_name\": \"calculate_sum\", \"param_type\": \"list\"}",  // 字段名不同！
+    "input": "{\"method_name\": \"calculate_sum\", \"param_type\": \"list\"}",  // Different field names!
     "output": "def calculate_sum(numbers: list) -> int: ..."
   }
 ]
 ```
 
-#### 支持的输入格式
+#### Supported Input Formats
 
-**JSON格式**（推荐）：
+**JSON Format** (recommended):
 ```json
 [
   {
@@ -278,7 +280,7 @@ python main.py
 ]
 ```
 
-**简单文本格式**：
+**Simple Text Format**:
 ```
 Input:
 topic=sustainability
@@ -295,219 +297,219 @@ Output:
 # The Future of AI: 5 Trends That Will Shape 2024...
 ```
 
-### 支持的用户角色
+### Supported User Roles
 
-- `software developers` - 软件开发者
-- `content creators` - 内容创作者  
-- `customer support representatives` - 客服代表
-- `data scientists` - 数据科学家
-- `marketing professionals` - 市场营销专家
-- `teachers` - 教师
-- 或任何自定义角色
+- `software developers` - Software developers
+- `content creators` - Content creators  
+- `customer support representatives` - Customer service representatives
+- `data scientists` - Data scientists
+- `marketing professionals` - Marketing professionals
+- `teachers` - Teachers
+- Or any custom role
 
-## 🛠️ 本地开发和测试
+## 🛠️ Local Development and Testing
 
-### 运行演示脚本
+### Running Demo Scripts
 
 ```bash
-# 完整功能演示
+# Complete feature demo
 python demo.py
 
-# 测试Web界面组件
+# Test Web interface components
 python test_web.py
 
-# 测试代理配置和优化
+# Test proxy configuration and optimization
 python test_proxy_optimization.py
 
-# A2A客户端测试
+# A2A client test
 python test_client.py
 ```
 
-### 开发环境配置
+### Development Environment Configuration
 
 ```bash
-# 开发模式环境变量
+# Development mode environment variables
 export RELOAD=true
 export LOG_LEVEL=debug
 export VERBOSE_LOGGING=true
 export SERVER_PORT=8888
 export WEB_PORT=7861
 
-# 启动开发服务器
+# Start development server
 python main.py
 ```
 
-## 📊 输出格式
+## 📊 Output Format
 
 ```json
 {
-  "role": "目标用户角色",
-  "basic_requirements": "基本任务要求",
-  "model_type": "使用的模型",
+  "role": "Target user role",
+  "basic_requirements": "Basic task requirements",
+  "model_type": "Model used",
   "original_examples": [
     {
-      "input": "示例输入",
-      "output": "示例输出"
+      "input": "Example input",
+      "output": "Example output"
     }
   ],
-  "generated_prompt": "生成的初始prompt",
+  "generated_prompt": "Generated initial prompt",
   "evaluations": [
-    "评估结果1",
-    "评估结果2"
+    "Evaluation result 1",
+    "Evaluation result 2"
   ],
   "alternative_prompts": [
-    "改进方案1",
-    "改进方案2",
-    "改进方案3"
+    "Improvement plan 1",
+    "Improvement plan 2",
+    "Improvement plan 3"
   ],
-  "final_recommendation": "最终推荐的prompt",
+  "final_recommendation": "Final recommended prompt",
   "step": "completed"
 }
 ```
 
-## 🏗️ 系统架构
+## 🏗️ System Architecture
 
-### 核心组件
-- **多Agent系统**: 专业化的生成器、评估器、改进器
-- **LangGraph工作流**: 状态管理和流程编排
-- **模型工厂**: 统一的模型创建和管理接口，支持实例缓存
-- **A2A集成**: 标准化的Agent服务接口
-- **Web界面**: 基于Gradio的交互界面，支持流式处理
-- **会话状态**: SessionState类管理用户会话和历史记录
+### Core Components
+- **Multi-Agent System**: Specialized generator, evaluator, improver
+- **LangGraph Workflow**: State management and process orchestration
+- **Model Factory**: Unified model creation and management interface with instance caching
+- **A2A Integration**: Standardized Agent service interface
+- **Web Interface**: Gradio-based interactive interface with streaming support
+- **Session State**: SessionState class for user session and history management
 
-### 新增特性
-- **错误处理**: 分类错误处理（输入错误、连接错误、运行时错误）
-- **代理支持**: 内置代理配置，自动处理网络请求
-- **日志系统**: 完整的日志记录，支持文件输出和不同级别
-- **输入验证**: 全面的输入验证，包括字段名一致性检查
-- **状态管理**: 安全的会话状态管理，避免全局变量
-- **配置管理**: 丰富的环境变量配置选项
+### New Features
+- **Error Handling**: Classified error handling (input errors, connection errors, runtime errors)
+- **Proxy Support**: Built-in proxy configuration with automatic network request handling
+- **Logging System**: Complete logging with file output and different levels
+- **Input Validation**: Comprehensive input validation including field name consistency checking
+- **State Management**: Safe session state management avoiding global variables
+- **Configuration Management**: Rich environment variable configuration options
 
-## 🔧 配置选项
+## 🔧 Configuration Options
 
-### 环境变量
+### Environment Variables
 
-| 变量名 | 必需 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `GOOGLE_API_KEY` | 条件* | - | Google Gemini API密钥 |
-| `OPENAI_API_KEY` | 条件* | - | OpenAI API密钥 |
-| `SERVER_HOST` | 否 | `0.0.0.0` | 服务器主机地址 |
-| `SERVER_PORT` | 否 | `9999` | 服务器端口 |
-| `WEB_HOST` | 否 | `0.0.0.0` | Web界面主机地址 |
-| `WEB_PORT` | 否 | `7860` | Web界面端口 |
-| `LOG_LEVEL` | 否 | `info` | 日志级别 (debug/info/warning/error) |
-| `WORKERS` | 否 | `1` | 工作进程数 |
-| `RELOAD` | 否 | `false` | 是否启用热重载 |
-| `HTTPS_PROXY` | 否 | `http://127.0.0.1:7890` | HTTPS代理地址 |
-| `HTTP_PROXY` | 否 | `http://127.0.0.1:7890` | HTTP代理地址 |
-| `MODEL_TEMPERATURE` | 否 | `0.7` | 模型温度参数 |
-| `REQUEST_TIMEOUT` | 否 | `60` | 请求超时时间(秒) |
-| `MAX_RETRIES` | 否 | `3` | 最大重试次数 |
+| Variable Name | Required | Default | Description |
+|---------------|----------|---------|-------------|
+| `GOOGLE_API_KEY` | Conditional* | - | Google Gemini API key |
+| `OPENAI_API_KEY` | Conditional* | - | OpenAI API key |
+| `SERVER_HOST` | No | `0.0.0.0` | Server host address |
+| `SERVER_PORT` | No | `9999` | Server port |
+| `WEB_HOST` | No | `0.0.0.0` | Web interface host address |
+| `WEB_PORT` | No | `7860` | Web interface port |
+| `LOG_LEVEL` | No | `info` | Log level (debug/info/warning/error) |
+| `WORKERS` | No | `1` | Number of worker processes |
+| `RELOAD` | No | `false` | Enable hot reload |
+| `HTTPS_PROXY` | No | `http://127.0.0.1:7890` | HTTPS proxy address |
+| `HTTP_PROXY` | No | `http://127.0.0.1:7890` | HTTP proxy address |
+| `MODEL_TEMPERATURE` | No | `0.7` | Model temperature parameter |
+| `REQUEST_TIMEOUT` | No | `60` | Request timeout (seconds) |
+| `MAX_RETRIES` | No | `3` | Maximum retry attempts |
 
-*至少需要配置一个API密钥
+*At least one API key must be configured
 
-### 性能优化
+### Performance Optimization
 
-- **模型实例缓存**: 避免重复创建模型实例
-- **工作流缓存**: 不同模型类型的工作流实例复用
-- **错误恢复**: 单个步骤失败时的优雅降级
-- **输入验证**: 提前验证避免无效请求
-- **日志记录**: 详细的性能和错误日志
-- **会话管理**: 智能状态管理和历史记录
+- **Model Instance Caching**: Avoid repeated model instance creation
+- **Workflow Caching**: Reuse workflow instances for different model types
+- **Error Recovery**: Graceful degradation when individual steps fail
+- **Input Validation**: Early validation to avoid invalid requests
+- **Logging**: Detailed performance and error logs
+- **Session Management**: Intelligent state management and history tracking
 
-## 🚨 故障排除
+## 🚨 Troubleshooting
 
-### 常见问题
+### Common Issues
 
 1. **ImportError: cannot import name 'StateGraph'**
-   - 解决: 确保安装了正确版本的langgraph: `pip install langgraph>=0.4.1`
+   - Solution: Ensure correct langgraph version is installed: `pip install langgraph>=0.4.1`
 
-2. **API密钥错误**
-   - 检查.env文件中的API密钥配置
-   - 确保至少配置了一个有效的API密钥
-   - 检查密钥格式是否正确
+2. **API Key Error**
+   - Check API key configuration in .env file
+   - Ensure at least one valid API key is configured
+   - Verify key format is correct
 
-3. **端口占用**
-   - 修改环境变量中的端口配置: `SERVER_PORT=8888`
-   - 或停止占用端口的进程: `lsof -ti:9999 | xargs kill`
+3. **Port Occupied**
+   - Modify port configuration in environment variables: `SERVER_PORT=8888`
+   - Or stop processes occupying the port: `lsof -ti:9999 | xargs kill`
 
-4. **示例字段名不一致错误**
-   - 确保所有示例的input字段名完全相同
-   - 检查JSON格式是否正确
-   - 参考文档中的示例格式
+4. **Example Field Name Inconsistency Error**
+   - Ensure all examples' input field names are exactly the same
+   - Check JSON format is correct
+   - Refer to example formats in documentation
 
-5. **代理连接问题**
-   - 检查代理软件是否正常运行
-   - 验证代理地址和端口配置
-   - 尝试不同的代理端口
+5. **Proxy Connection Issues**
+   - Check if proxy software is running normally
+   - Verify proxy address and port configuration
+   - Try different proxy ports
 
-6. **Web界面无法访问**
-   - 检查防火墙设置
-   - 确认Web服务器正常启动
-   - 检查端口是否被占用
+6. **Web Interface Inaccessible**
+   - Check firewall settings
+   - Confirm web server started normally
+   - Check if port is occupied
 
-### 日志和调试
+### Logging and Debugging
 
 ```bash
-# 启用详细日志
+# Enable verbose logging
 export LOG_LEVEL=debug
 export VERBOSE_LOGGING=true
 
-# 查看日志文件
+# View log file
 tail -f prompt_optimizer.log
 
-# 检查服务器状态
+# Check server status
 curl http://localhost:9999/.well-known/agent.json
 ```
 
-### 环境检查
+### Environment Check
 
-系统启动时会自动检查：
-- API密钥配置状态
-- 代理配置状态  
-- 依赖包安装状态
-- 端口可用性
+The system automatically checks at startup:
+- API key configuration status
+- Proxy configuration status  
+- Dependency package installation status
+- Port availability
 
-## 📚 更多文档
+## 📚 More Documentation
 
-- [系统架构](ARCHITECTURE.md) - 详细的系统架构说明
-- [API文档](API.md) - A2A接口规范
-- [开发指南](DEVELOPMENT.md) - 开发和贡献指南
-- [更新日志](CHANGELOG.md) - 版本更新记录
+- [System Architecture](ARCHITECTURE.md) - Detailed system architecture description
+- [API Documentation](API.md) - A2A interface specifications
+- [Development Guide](DEVELOPMENT.md) - Development and contribution guide
+- [Changelog](CHANGELOG.md) - Version update records
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-1. Fork项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建Pull Request
+1. Fork the project
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Create Pull Request
 
-## 📄 许可证
+## 📄 License
 
-[MIT License](LICENSE) - 详见许可证文件
+[MIT License](LICENSE) - See license file for details
 
-## 🔗 相关链接
+## 🔗 Related Links
 
-- [LangGraph文档](https://langchain-ai.github.io/langgraph/)
-- [A2A框架](https://github.com/a2a-dev/a2a)
+- [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
+- [A2A Framework](https://github.com/a2a-dev/a2a)
 - [Google Gemini API](https://ai.google.dev/)
 - [OpenAI API](https://platform.openai.com/)
-- [Gradio文档](https://gradio.app/docs/)
+- [Gradio Documentation](https://gradio.app/docs/)
 
 ---
 
-**开发者**: 基于LangGraph的多Agent prompt优化系统  
-**版本**: 1.2.0 - 增强健壮性和Web界面版  
-**最后更新**: 2024年12月
+**Developer**: Multi-Agent prompt optimization system based on LangGraph  
+**Version**: 1.2.0 - Enhanced Robustness and Web Interface Version  
+**Last Updated**: December 2024
 
-## 🎯 版本特性
+## 🎯 Version Features
 
-### v1.2.0 新特性
-- ✨ 完整的Web界面支持
-- 🛡️ 增强的错误处理和状态管理
-- 🔍 示例字段名一致性验证
-- 📋 会话状态和历史记录管理
-- 🔧 丰富的环境变量配置
-- 📊 详细的日志记录和监控
-- 🚀 流式处理和实时反馈
+### v1.2.0 New Features
+- ✨ Complete Web interface support
+- 🛡️ Enhanced error handling and state management
+- 🔍 Example field name consistency validation
+- 📋 Session state and history management
+- 🔧 Rich environment variable configuration
+- 📊 Detailed logging and monitoring
+- 🚀 Streaming processing and real-time feedback
