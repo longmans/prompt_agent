@@ -14,6 +14,7 @@ load_dotenv()
 class PromptOptimizerState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
     role: str  # 目标用户角色 (如 "software developers", "book authors")
+    basic_requirements: str  # 基本要求
     examples: List[Dict[str, str]]  # few-shot examples [{"input": "...", "output": "..."}]
     current_prompt: str
     evaluations: List[str]
@@ -26,9 +27,10 @@ class PromptOptimizerState(TypedDict):
 @dataclass
 class PromptRequest:
     role: str
-    examples: List[Dict[str, str]]
-    additional_requirements: str = ""
-    model_type: str = "gemini"  # 默认使用gemini，支持"gemini"和"openai"
+    basic_requirements: str  # 新增基本要求字段
+    examples: List[Dict[str, str]] = None  # 改为可选
+    additional_requirements: str = ""  # 保持可选
+    model_type: str = "openai"  # 默认使用openai
 
 
 class ModelFactory:
@@ -134,14 +136,22 @@ class ModelFactory:
 class PromptGeneratorAgent:
     """Prompt生成器Agent - 负责生成初始prompt工程指导和prompt"""
     
-    def __init__(self, model=None, model_type: str = "gemini"):
-        self.model_type = model_type
-        self.model = model or ModelFactory.create_model(model_type)
+    def __init__(self):
+        self.model = None
+    
+    def _ensure_model(self, model_type: str):
+        """确保model已经初始化，并且类型正确"""
+        if not self.model or self.model_type != model_type:
+            self.model_type = model_type
+            self.model = ModelFactory.create_model(model_type)
     
     async def generate_prompt_engineering_guide(self, state: PromptOptimizerState) -> Dict:
         """生成针对特定角色的prompt工程指导"""
         if not state.get('role'):
             raise ValueError("Role is required for generating prompt engineering guide")
+            
+        # 确保使用正确的模型类型
+        self._ensure_model(state['model_type'])
             
         guide_prompt = f"""
         Generate a detailed prompt engineering guide. The audience is {state['role']}.
@@ -239,14 +249,22 @@ class PromptGeneratorAgent:
 class PromptEvaluatorAgent:
     """Prompt评估器Agent - 负责评估prompt质量"""
     
-    def __init__(self, model=None, model_type: str = "gemini"):
-        self.model_type = model_type
-        self.model = model or ModelFactory.create_model(model_type)
+    def __init__(self):
+        self.model = None
+    
+    def _ensure_model(self, model_type: str):
+        """确保model已经初始化，并且类型正确"""
+        if not self.model or self.model_type != model_type:
+            self.model_type = model_type
+            self.model = ModelFactory.create_model(model_type)
     
     async def generate_evaluation_guide(self, state: PromptOptimizerState) -> Dict:
         """生成针对特定角色的prompt评估指导"""
         if not state.get('role'):
             raise ValueError("Role is required for generating evaluation guide")
+            
+        # 确保使用正确的模型类型
+        self._ensure_model(state['model_type'])
             
         eval_guide_prompt = f"""
         Generate a detailed prompt evaluation guide. The audience is {state['role']}.
@@ -274,6 +292,9 @@ class PromptEvaluatorAgent:
         """评估当前prompt"""
         if not state.get('current_prompt'):
             raise ValueError("Current prompt is required for evaluation")
+            
+        # 确保使用正确的模型类型
+        self._ensure_model(state['model_type'])
             
         evaluation_prompt = f"""
         Evaluate this prompt for {state['role']}:
@@ -322,9 +343,14 @@ class PromptEvaluatorAgent:
 class PromptImproverAgent:
     """Prompt改进器Agent - 负责生成改进的prompt版本"""
     
-    def __init__(self, model=None, model_type: str = "gemini"):
-        self.model_type = model_type
-        self.model = model or ModelFactory.create_model(model_type)
+    def __init__(self):
+        self.model = None
+    
+    def _ensure_model(self, model_type: str):
+        """确保model已经初始化，并且类型正确"""
+        if not self.model or self.model_type != model_type:
+            self.model_type = model_type
+            self.model = ModelFactory.create_model(model_type)
     
     async def generate_improved_prompts(self, state: PromptOptimizerState) -> Dict:
         """生成3个改进的prompt变体"""
@@ -333,6 +359,9 @@ class PromptImproverAgent:
             
         if not state.get('evaluations'):
             raise ValueError("Evaluation feedback is required for generating improvements")
+        
+        # 确保使用正确的模型类型
+        self._ensure_model(state['model_type'])
         
         improvement_prompt = f"""
         Based on the evaluation, generate 3 improved alternative prompts for {state['role']}.
@@ -432,15 +461,14 @@ class PromptImproverAgent:
 class PromptOptimizerWorkflow:
     """协调多个Agent的工作流，优化错误处理和状态管理"""
     
-    def __init__(self, model_type: str = "gemini"):
-        self.model_type = model_type
+    def __init__(self):
         try:
-            self.generator = PromptGeneratorAgent(model_type=model_type)
-            self.evaluator = PromptEvaluatorAgent(model_type=model_type)
-            self.improver = PromptImproverAgent(model_type=model_type)
+            self.generator = PromptGeneratorAgent()
+            self.evaluator = PromptEvaluatorAgent()
+            self.improver = PromptImproverAgent()
             self.workflow = self._build_workflow()
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize workflow with {model_type} model: {str(e)}")
+            raise RuntimeError(f"Failed to initialize workflow: {str(e)}")
     
     def _build_workflow(self) -> StateGraph:
         """构建LangGraph工作流"""
@@ -559,6 +587,7 @@ class PromptOptimizerWorkflow:
         initial_state = PromptOptimizerState(
             messages=[],
             role=request.role.strip(),
+            basic_requirements=request.basic_requirements,
             examples=request.examples,
             current_prompt="",
             evaluations=[],

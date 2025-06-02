@@ -55,6 +55,7 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
             # 创建prompt请求
             prompt_request = PromptRequest(
                 role=request_data.get("role", "general user"),
+                basic_requirements=request_data.get("basic_requirements", ""),
                 examples=request_data.get("examples", []),
                 additional_requirements=request_data.get("additional_requirements", ""),
                 model_type=model_type
@@ -99,7 +100,7 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
         """获取或创建workflow实例，使用缓存提高性能"""
         if model_type not in self._workflows:
             try:
-                self._workflows[model_type] = PromptOptimizerWorkflow(model_type=model_type)
+                self._workflows[model_type] = PromptOptimizerWorkflow()
                 logger.info(f"Created new workflow for model type: {model_type}")
             except Exception as e:
                 logger.error(f"Failed to create workflow for {model_type}: {str(e)}")
@@ -127,20 +128,22 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
         if any(keyword in content for keyword in ['developer', 'programming', 'code', 'software']):
             return {
                 "role": "software developers",
+                "basic_requirements": "编写高质量、可维护的代码，包括函数、类和API设计",
                 "examples": [
                     {"input": "Write a function", "output": "def example_function():"},
                     {"input": "Create a class", "output": "class ExampleClass:"}
                 ],
-                "model_type": "gemini"
+                "model_type": "openai"
             }
         elif any(keyword in content for keyword in ['writer', 'author', 'content', 'writing']):
             return {
                 "role": "content writers",
+                "basic_requirements": "创作引人入胜、结构清晰的内容，包括文章、博客和营销文案",
                 "examples": [
                     {"input": "Write an article", "output": "Here's a compelling article..."},
                     {"input": "Create a blog post", "output": "Welcome to our blog..."}
                 ],
-                "model_type": "gemini"
+                "model_type": "openai"
             }
         else:
             logger.info("Could not parse natural language input")
@@ -155,35 +158,38 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
         if "role" not in request_data:
             return "缺少必需字段: role"
         
-        if "examples" not in request_data:
-            return "缺少必需字段: examples"
+        if "basic_requirements" not in request_data:
+            return "缺少必需字段: basic_requirements"
         
         # 验证角色字段
         role = request_data.get("role", "")
         if not isinstance(role, str) or not role.strip():
             return "role字段必须是非空字符串"
         
-        # 验证示例字段
+        # 验证基本要求字段
+        basic_requirements = request_data.get("basic_requirements", "")
+        if not isinstance(basic_requirements, str) or not basic_requirements.strip():
+            return "basic_requirements字段必须是非空字符串"
+        
+        # 验证示例字段（如果提供）
         examples = request_data.get("examples", [])
-        if not isinstance(examples, list):
-            return "examples字段必须是数组"
-        
-        if len(examples) == 0:
-            return "至少需要提供一个示例"
-        
-        # 验证每个示例
-        for i, example in enumerate(examples):
-            if not isinstance(example, dict):
-                return f"示例 {i+1} 必须是对象格式"
+        if examples:  # 只在提供示例时验证
+            if not isinstance(examples, list):
+                return "examples字段必须是数组"
             
-            if "input" not in example or "output" not in example:
-                return f"示例 {i+1} 必须包含 'input' 和 'output' 字段"
-            
-            if not isinstance(example["input"], str) or not isinstance(example["output"], str):
-                return f"示例 {i+1} 的 'input' 和 'output' 必须是字符串"
-            
-            if not example["input"].strip() or not example["output"].strip():
-                return f"示例 {i+1} 的 'input' 和 'output' 不能为空"
+            # 验证每个示例
+            for i, example in enumerate(examples):
+                if not isinstance(example, dict):
+                    return f"示例 {i+1} 必须是对象格式"
+                
+                if "input" not in example or "output" not in example:
+                    return f"示例 {i+1} 必须包含 'input' 和 'output' 字段"
+                
+                if not isinstance(example["input"], str) or not isinstance(example["output"], str):
+                    return f"示例 {i+1} 的 'input' 和 'output' 必须是字符串"
+                
+                if not example["input"].strip() or not example["output"].strip():
+                    return f"示例 {i+1} 的 'input' 和 'output' 不能为空"
         
         return None
 
@@ -200,8 +206,9 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
 
 ```json
 {
-    "role": "目标用户角色，如 'software developers', 'book authors', 'customer support reps'",
-    "examples": [
+    "role": "目标用户角色，如 'software developers', 'book authors'",
+    "basic_requirements": "该角色需要完成的基本任务和要求",
+    "examples": [  // 可选
         {
             "input": "示例输入1",
             "output": "期望输出1"
@@ -211,14 +218,14 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
             "output": "期望输出2"
         }
     ],
-    "model_type": "模型类型，支持 'gemini'（默认）或 'openai'",
+    "model_type": "模型类型，支持 'gemini' 或 'openai'（默认）",
     "additional_requirements": "额外要求（可选）"
 }
 ```
 
 **🤖 支持的模型类型:**
-- `gemini`: Google Gemini 2.0 Flash (默认)
-- `openai`: OpenAI GPT-4o-mini
+- `openai`: OpenAI GPT-4o-mini (默认)
+- `gemini`: Google Gemini 2.0 Flash
 
 **🌐 代理配置:**
 系统已配置代理支持，默认使用 `http://127.0.0.1:7890`
@@ -227,34 +234,32 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
 **💡 快速开始示例:**
 直接发送 "software developer" 或 "content writer" 等关键词，系统会自动生成基础配置
 
-**示例：使用OpenAI模型优化软件开发prompt**
+**示例：软件开发prompt优化**
 ```json
 {
     "role": "software developers",
+    "basic_requirements": "编写高质量、可维护的Python代码，包括函数、类和API设计",
     "model_type": "openai",
     "examples": [
         {
             "input": "Write a function to calculate fibonacci numbers",
             "output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)"
-        },
-        {
-            "input": "Create a REST API endpoint",
-            "output": "@app.route('/api/users', methods=['GET'])\\ndef get_users():\\n    return jsonify(users)"
         }
     ],
-    "additional_requirements": "Focus on clean, maintainable code"
+    "additional_requirements": "代码需要包含详细的注释和错误处理"
 }
 ```
 
-**示例：使用Gemini模型优化客服对话prompt**
+**示例：内容创作prompt优化**
 ```json
 {
-    "role": "customer support representatives",
-    "model_type": "gemini",
+    "role": "content writers",
+    "basic_requirements": "创作引人入胜、结构清晰的博客文章和营销文案",
+    "model_type": "openai",
     "examples": [
         {
-            "input": "Customer complains about delayed delivery",
-            "output": "I sincerely apologize for the delay. Let me check your order status immediately."
+            "input": "Write a blog post about AI",
+            "output": "Title: The Future of AI\\n\\nArtificial Intelligence has transformed..."
         }
     ]
 }
@@ -266,6 +271,7 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
         """格式化优化结果，改进显示效果"""
         model_type = result.get('model_type', 'unknown').upper()
         role = result.get('role', 'Unknown')
+        basic_requirements = result.get('basic_requirements', 'N/A')
         generated_prompt = result.get('generated_prompt', 'N/A')
         evaluations = result.get('evaluations', [])
         alternative_prompts = result.get('alternative_prompts', [])
@@ -276,6 +282,7 @@ class PromptOptimizerAgentExecutor(AgentExecutor):
 ✅ **Prompt优化完成**
 
 🎯 **目标用户角色:** {role}
+📝 **基本要求:** {basic_requirements}
 🤖 **使用模型:** {model_type}
 📊 **处理示例数量:** {original_examples_count}
 

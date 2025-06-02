@@ -1,166 +1,142 @@
-# Prompt优化器架构设计
+# 🏗️ Prompt优化器系统架构
 
-## 🏗️ 整体架构
+## 📋 系统概述
 
-本项目实现了一个基于LangGraph多Agent协作的Prompt优化系统，遵循您描述的工作流程，并通过A2A框架对外提供服务。
+Prompt优化器是一个基于多Agent协作的智能系统，使用LangGraph实现工作流编排，支持多种大语言模型。系统采用模块化设计，每个组件都有明确的职责和接口。
 
-## 🤖 多Agent架构
+## 🎯 核心组件
 
-### 1. PromptGeneratorAgent (Prompt生成器)
-**职责：**
-- 生成针对特定用户角色的prompt工程指导
-- 基于few-shot示例逆向工程生成prompt
-- 提供额外的高质量示例
+### 1. 请求处理层 (Request Layer)
+- **PromptRequest**: 请求数据结构
+  - `role`: 目标用户角色
+  - `basic_requirements`: 基本任务要求
+  - `examples`: 可选的示例集合
+  - `additional_requirements`: 可选的额外要求
+  - `model_type`: 使用的模型类型
 
-**关键方法：**
-```python
-async def generate_prompt_engineering_guide(state) -> Dict
-async def generate_prompt_from_examples(state) -> Dict
+### 2. Agent层 (Agent Layer)
+- **PromptGeneratorAgent**: 生成初始prompt和工程指导
+- **PromptEvaluatorAgent**: 评估prompt质量和生成评估框架
+- **PromptImproverAgent**: 生成改进方案和优化建议
+
+### 3. 工作流层 (Workflow Layer)
+- **PromptOptimizerWorkflow**: 协调多个Agent的工作流程
+  1. 生成工程指导
+  2. 分析角色和要求
+  3. 生成初始prompt
+  4. 创建评估框架
+  5. 执行prompt评估
+  6. 生成改进方案
+  7. 选择最佳版本
+
+### 4. 模型层 (Model Layer)
+- **ModelFactory**: 模型工厂类
+  - 支持多种模型类型
+  - 处理模型实例缓存
+  - 管理代理配置
+
+### 5. Web服务层 (Web Service Layer)
+- **Web界面**: 基于Gradio的交互界面
+- **A2A服务**: Agent-to-Agent标准接口
+
+## 🔄 工作流程
+
+```mermaid
+graph TD
+    A[用户输入] --> B[请求处理层]
+    B --> C[工作流层]
+    C --> D[Agent层]
+    D --> E[模型层]
+    E --> D
+    D --> C
+    C --> F[结果输出]
 ```
 
-### 2. PromptEvaluatorAgent (Prompt评估器)
-**职责：**
-- 创建针对特定角色的评估框架
-- 对生成的prompt进行多维度评估
-- 识别prompt的优缺点
+## 💡 关键设计决策
 
-**关键方法：**
-```python
-async def generate_evaluation_guide(state) -> Dict
-async def evaluate_prompt(state) -> Dict
-```
+1. **模块化设计**
+   - 每个Agent独立负责特定任务
+   - 便于扩展和维护
+   - 支持灵活的组件替换
 
-### 3. PromptImproverAgent (Prompt改进器)
-**职责：**
-- 基于评估结果生成改进版本
-- 提供3个不同角度的优化方案
-- 每个方案聚焦特定的改进领域
+2. **状态管理**
+   - 使用TypedDict管理状态
+   - 确保类型安全
+   - 支持状态追踪和恢复
 
-**关键方法：**
-```python
-async def generate_improved_prompts(state) -> Dict
-```
+3. **错误处理**
+   - 多层级错误捕获
+   - 优雅的降级策略
+   - 详细的错误日志
 
-## 🔄 LangGraph工作流
+4. **可扩展性**
+   - 支持添加新的模型类型
+   - 可扩展的Agent功能
+   - 灵活的工作流定制
 
-### 工作流图
-```
-开始 → 生成工程指导 → 生成Prompt → 生成评估指导 → 评估Prompt → 生成改进方案 → 完成
-```
+## 🔧 配置管理
 
-### 状态管理
-```python
-class PromptOptimizerState(TypedDict):
-    messages: Annotated[List[BaseMessage], add_messages]
-    role: str
-    examples: List[Dict[str, str]]
-    current_prompt: str
-    evaluations: List[str]
-    alternative_prompts: List[str]
-    final_prompt: str
-    step: str
-```
+### 环境变量
+- `GOOGLE_API_KEY`: Gemini API密钥
+- `OPENAI_API_KEY`: OpenAI API密钥
+- `HTTPS_PROXY`: HTTPS代理设置
+- `HTTP_PROXY`: HTTP代理设置
 
-### 节点定义
-1. **generate_guide**: 生成工程指导
-2. **generate_prompt**: 基于示例生成prompt
-3. **generate_eval_guide**: 生成评估指导
-4. **evaluate_prompt**: 评估prompt质量
-5. **improve_prompts**: 生成改进方案
-6. **finalize**: 选择最佳方案
+### 缓存策略
+- 模型实例缓存
+- 工作流状态缓存
+- 结果缓存
 
-## 🔌 A2A集成架构
+## 📈 性能考虑
 
-### PromptOptimizerAgentExecutor
-实现`AgentExecutor`接口，将LangGraph工作流集成到A2A框架：
+1. **响应时间优化**
+   - 模型实例缓存
+   - 并行处理
+   - 流式响应
 
-```python
-class PromptOptimizerAgentExecutor(AgentExecutor):
-    async def execute(context, event_queue) -> None
-    async def cancel(context, event_queue) -> None
-```
+2. **资源使用**
+   - 内存管理
+   - API调用优化
+   - 缓存清理
 
-### 输入处理
-- 支持JSON格式的结构化输入
-- 包含错误处理和用户指导
-- 提供详细的使用帮助
+3. **可靠性**
+   - 错误重试机制
+   - 超时处理
+   - 状态恢复
 
-### 输出格式化
-- 结构化的markdown输出
-- 包含所有优化步骤的结果
-- 用户友好的展示格式
+## 🔒 安全性
 
-## 📊 数据流
+1. **API密钥管理**
+   - 环境变量配置
+   - 密钥验证
+   - 访问控制
 
-### 输入数据结构
-```json
-{
-    "role": "目标用户角色",
-    "examples": [
-        {"input": "示例输入", "output": "期望输出"}
-    ],
-    "additional_requirements": "额外要求"
-}
-```
+2. **输入验证**
+   - 请求数据验证
+   - 类型检查
+   - 安全过滤
 
-### 处理流程
-1. **输入验证** → 检查JSON格式和必需字段
-2. **状态初始化** → 创建PromptOptimizerState
-3. **工作流执行** → 按顺序执行所有Agent节点
-4. **结果聚合** → 收集所有Agent的输出
-5. **格式化输出** → 生成用户友好的结果
+3. **错误处理**
+   - 安全的错误消息
+   - 日志脱敏
+   - 异常隔离
 
-### 输出数据结构
-```python
-{
-    "role": str,
-    "original_examples": List[Dict],
-    "generated_prompt": str,
-    "evaluations": List[str],
-    "alternative_prompts": List[str],
-    "final_recommendation": str,
-    "step": str
-}
-```
+## 🔄 未来扩展
 
-## 🎯 设计原则
+1. **新功能**
+   - 更多模型支持
+   - 高级优化策略
+   - 自定义评估指标
 
-### 1. 模块化设计
-- 每个Agent专注单一职责
-- 清晰的接口定义
-- 易于扩展和维护
+2. **性能优化**
+   - 分布式处理
+   - 更智能的缓存
+   - 批处理支持
 
-### 2. 状态管理
-- 使用TypedDict确保类型安全
-- 状态在Agent间透明传递
-- 支持中间结果的保存和恢复
-
-### 3. 错误处理
-- 全流程错误捕获
-- 用户友好的错误消息
-- 优雅的降级处理
-
-### 4. 可扩展性
-- 支持不同的LLM模型
-- 可添加新的Agent角色
-- 灵活的工作流配置
-
-## 🔧 技术实现细节
-
-### LLM集成
-- 默认使用Google Generative AI
-- 支持多种模型提供商
-- 统一的模型接口
-
-### 消息处理
-- 基于LangChain的消息系统
-- 支持流式输出
-- 异步处理优化性能
-
-### 配置管理
-- 环境变量配置
-- 支持多环境部署
-- 安全的API密钥管理
+3. **集成增强**
+   - 更多API集成
+   - 插件系统
+   - 监控和分析
 
 ## 📁 文件结构
 

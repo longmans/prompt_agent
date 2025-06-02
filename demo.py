@@ -16,12 +16,13 @@ async def demo_software_development_gemini():
     print("=" * 60)
     
     # 创建工作流
-    workflow = PromptOptimizerWorkflow(model_type="gemini")
+    workflow = PromptOptimizerWorkflow()
     
     # 创建请求
     request = PromptRequest(
         role="software developers",
-        examples=[
+        basic_requirements="编写高质量、可维护的Python代码，包括函数、类和API设计",
+        examples=[  # 可选的示例
             {
                 "input": "Write a function to calculate fibonacci numbers",
                 "output": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)"
@@ -31,13 +32,14 @@ async def demo_software_development_gemini():
                 "output": "@app.route('/api/users', methods=['GET'])\ndef get_users():\n    return jsonify(users)"
             }
         ],
-        additional_requirements="Focus on clean, maintainable code",
+        additional_requirements="代码需要包含详细的注释和错误处理",
         model_type="gemini"
     )
     
     print(f"目标角色: {request.role}")
+    print(f"基本要求: {request.basic_requirements}")
     print(f"模型类型: {request.model_type.upper()}")
-    print(f"示例数量: {len(request.examples)}")
+    print(f"示例数量: {len(request.examples or [])}")
     print("开始优化...")
     
     try:
@@ -79,12 +81,13 @@ async def demo_software_development_openai():
         return
     
     # 创建工作流
-    workflow = PromptOptimizerWorkflow(model_type="openai")
+    workflow = PromptOptimizerWorkflow()
     
     # 创建请求
     request = PromptRequest(
         role="software developers",
-        examples=[
+        basic_requirements="编写健壮、可扩展的Python代码，重点关注错误处理和文档",
+        examples=[  # 可选的示例
             {
                 "input": "Write a function to validate email addresses",
                 "output": "import re\n\ndef validate_email(email):\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return re.match(pattern, email) is not None"
@@ -94,13 +97,14 @@ async def demo_software_development_openai():
                 "output": "class DatabaseConnection:\n    def __init__(self, host, database, user, password):\n        self.host = host\n        self.database = database\n        self.user = user\n        self.password = password\n        self.connection = None"
             }
         ],
-        additional_requirements="Include error handling and documentation",
+        additional_requirements="代码需要包含完整的类型提示和异常处理",
         model_type="openai"
     )
     
     print(f"目标角色: {request.role}")
+    print(f"基本要求: {request.basic_requirements}")
     print(f"模型类型: {request.model_type.upper()}")
-    print(f"示例数量: {len(request.examples)}")
+    print(f"示例数量: {len(request.examples or [])}")
     print("开始优化...")
     
     try:
@@ -110,6 +114,7 @@ async def demo_software_development_openai():
         # 显示结果
         print("\n✅ 优化完成！")
         print(f"生成的prompt长度: {len(result.get('generated_prompt', ''))} 字符")
+        print(f"生成的prompt: {result.get('generated_prompt', '')}")
         print(f"评估数量: {len(result.get('evaluations', []))}")
         print(f"改进方案数量: {len(result.get('alternative_prompts', []))}")
         
@@ -122,11 +127,12 @@ async def demo_customer_support():
     print("\n\n📞 演示：客服对话prompt优化 - Gemini模型")
     print("=" * 60)
     
-    workflow = PromptOptimizerWorkflow(model_type="gemini")
+    workflow = PromptOptimizerWorkflow()
     
     request = PromptRequest(
         role="customer support representatives",
-        examples=[
+        basic_requirements="提供专业、有同理心的客户服务，快速解决客户问题",
+        examples=[  # 可选的示例
             {
                 "input": "Customer complains about delayed delivery",
                 "output": "I sincerely apologize for the delay. Let me check your order status and provide an update."
@@ -136,11 +142,12 @@ async def demo_customer_support():
                 "output": "I understand your concern. I'd be happy to help with the refund process."
             }
         ],
-        additional_requirements="Maintain empathetic and professional tone",
-        model_type="gemini"
+        additional_requirements="保持积极友好的语气，提供明确的解决方案",
+        model_type="openai"
     )
     
     print(f"目标角色: {request.role}")
+    print(f"基本要求: {request.basic_requirements}")
     print(f"模型类型: {request.model_type.upper()}")
     print("开始优化...")
     
@@ -160,11 +167,12 @@ async def demo_content_creation():
     print("\n\n✍️ 演示：内容创作prompt优化 - Gemini模型")
     print("=" * 60)
     
-    workflow = PromptOptimizerWorkflow(model_type="gemini")
+    workflow = PromptOptimizerWorkflow()
     
     request = PromptRequest(
         role="content creators",
-        examples=[
+        basic_requirements="创作引人入胜、结构清晰的内容，包括博客文章和社交媒体帖子",
+        examples=[  # 可选的示例
             {
                 "input": "Write a blog post about AI trends",
                 "output": "# The Future of AI: 5 Trends That Will Shape 2024\n\nAI continues to evolve rapidly..."
@@ -174,11 +182,12 @@ async def demo_content_creation():
                 "output": "🌱 Small changes, BIG impact! Here are 3 easy sustainability tips..."
             }
         ],
-        additional_requirements="Engaging tone with clear call-to-action",
-        model_type="gemini"
+        additional_requirements="内容需要包含吸引人的标题和清晰的行动号召",
+        model_type="openai"
     )
     
     print(f"目标角色: {request.role}")
+    print(f"基本要求: {request.basic_requirements}")
     print(f"模型类型: {request.model_type.upper()}")
     print("开始优化...")
     
@@ -198,73 +207,66 @@ async def demo_content_creation():
         print(f"❌ 演示失败: {e}")
 
 
-def check_environment():
-    """检查环境配置"""
-    print("🔍 检查环境配置...")
-    
-    # 检查Google API密钥
-    google_api_key = os.getenv('GOOGLE_API_KEY')
-    if not google_api_key or google_api_key == 'your_google_api_key_here':
-        print("❌ 未配置GOOGLE_API_KEY")
-        google_configured = False
-    else:
-        print("✅ Google API密钥已配置")
-        google_configured = True
+async def demo_no_examples():
+    """演示无示例的prompt优化"""
+    print("\n\n🎯 演示：无示例的prompt优化 - OpenAI模型")
+    print("=" * 60)
     
     # 检查OpenAI API密钥
-    openai_api_key = os.getenv('OPENAI_API_KEY')
-    if not openai_api_key or openai_api_key == 'your_openai_api_key_here':
-        print("⚠️ 未配置OPENAI_API_KEY (OpenAI功能将被跳过)")
-        openai_configured = False
-    else:
-        print("✅ OpenAI API密钥已配置")
-        openai_configured = True
+    if not os.getenv('OPENAI_API_KEY') or os.getenv('OPENAI_API_KEY') == 'your_openai_api_key_here':
+        print("⚠️ 跳过OpenAI演示：未配置OPENAI_API_KEY")
+        return
     
-    if not google_configured:
-        print("\n请先配置Google API密钥：")
-        print("export GOOGLE_API_KEY='your_actual_api_key'")
-        print("或编辑.env文件")
-        return False
+    workflow = PromptOptimizerWorkflow()
     
-    return True
+    request = PromptRequest(
+        role="data scientists",
+        basic_requirements="进行数据分析和可视化，生成清晰的见解报告",
+        examples=[],  # 不提供示例
+        additional_requirements="报告需要包含数据来源、方法论和关键发现",
+        model_type="openai"
+    )
+    
+    print(f"目标角色: {request.role}")
+    print(f"基本要求: {request.basic_requirements}")
+    print(f"模型类型: {request.model_type.upper()}")
+    print("开始优化...")
+    
+    try:
+        result = await workflow.optimize_prompt(request)
+        print("✅ 无示例prompt优化完成！")
+        
+        # 显示简化的结果
+        print(f"\n📊 优化结果摘要:")
+        print(f"- 生成prompt长度: {len(result.get('generated_prompt', ''))} 字符")
+        print(f"- 评估报告: {len(result.get('evaluations', []))} 份")
+        print(f"- 改进方案: {len(result.get('alternative_prompts', []))} 个")
+        
+    except Exception as e:
+        print(f"❌ 演示失败: {e}")
 
 
 async def main():
     """主演示函数"""
-    print("🤖 Prompt优化器多Agent协作演示")
-    print("基于LangGraph的智能prompt工程系统 - 多模型支持")
-    print("=" * 70)
+    print("🚀 启动Prompt优化器演示...")
+    print("\n💡 本演示将展示不同场景下的prompt优化过程")
+    print("包括软件开发、客服对话、内容创作等场景")
+    print("同时演示不同模型（Gemini/OpenAI）的效果")
     
-    # 检查环境
-    if not check_environment():
-        return
+    # 运行所有演示
+    #await demo_software_development_gemini()
+    await demo_software_development_openai()
+    await demo_customer_support()
+    await demo_content_creation()
+    await demo_no_examples()  # 新增：演示无示例的情况
     
-    print("\n开始演示多个使用场景和模型...\n")
-    
-    # 运行演示
-    try:
-        await demo_software_development_gemini()
-        await demo_software_development_openai()
-        await demo_customer_support()
-        await demo_content_creation()
-        
-        print("\n" + "=" * 70)
-        print("🎉 所有演示完成！")
-        print("\n📋 总结:")
-        print("- 多Agent协作架构成功展示")
-        print("- 支持Gemini和OpenAI两种模型")
-        print("- 针对不同用户角色的prompt优化")
-        print("- 生成、评估、改进的完整流程")
-        print("- 可扩展的LangGraph工作流")
-        
-    except Exception as e:
-        print(f"\n❌ 演示过程中出现错误: {e}")
-
+    print("\n🎉 演示完成！")
+    print("\n📝 总结：")
+    print("1. 支持多种用户角色和场景")
+    print("2. 可以使用不同的模型")
+    print("3. 示例是可选的，基本要求是必需的")
+    print("4. 提供详细的评估和改进建议")
+    print("5. 支持流式输出和格式化展示")
 
 if __name__ == "__main__":
-    # 加载环境变量
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    # 运行演示
     asyncio.run(main()) 

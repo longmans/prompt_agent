@@ -54,9 +54,9 @@ python main.py
 ## 📋 7步优化流程
 
 1. **生成工程指导** - 为特定角色生成详细的prompt工程指南
-2. **提供示例集** - 基于用户提供的示例生成更多高质量示例
-3. **生成初始Prompt** - 根据示例生成能产生期望输出的prompt
-4. **生成评估指导** - 创建针对性的prompt评估框架
+2. **分析角色和要求** - 理解用户角色和基本要求
+3. **生成初始Prompt** - 根据角色和要求生成基础prompt
+4. **创建评估框架** - 创建针对性的prompt评估框架
 5. **执行Prompt评估** - 对生成的prompt进行全面评估
 6. **生成改进方案** - 提供3个不同的优化版本
 7. **选择最佳版本** - 自动推荐或用户选择最终prompt
@@ -127,7 +127,13 @@ python main.py
   "messages": [
     {
       "role": "user", 
-      "content": "{\"role\": \"目标用户角色\", \"model_type\": \"模型类型\", \"examples\": [...], \"additional_requirements\": \"额外要求\"}"
+      "content": {
+        "role": "目标用户角色",
+        "basic_requirements": "基本任务要求",
+        "examples": [...],  // 可选
+        "additional_requirements": "额外要求",  // 可选
+        "model_type": "模型类型"  // 可选，默认openai
+      }
     }
   ]
 }
@@ -140,7 +146,18 @@ python main.py
   "messages": [
     {
       "role": "user",
-      "content": "{\"role\": \"software developers\", \"model_type\": \"gemini\", \"examples\": [{\"input\": \"Write a function to calculate fibonacci\", \"output\": \"def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)\"}], \"additional_requirements\": \"Include type hints and documentation\"}"
+      "content": {
+        "role": "software developers",
+        "basic_requirements": "编写高质量、可维护的Python代码，包括函数、类和API设计",
+        "model_type": "gemini",
+        "examples": [
+          {
+            "input": "Write a function to calculate fibonacci",
+            "output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)"
+          }
+        ],
+        "additional_requirements": "Include type hints and documentation"
+      }
     }
   ]
 }
@@ -153,7 +170,18 @@ python main.py
   "messages": [
     {
       "role": "user", 
-      "content": "{\"role\": \"content creators\", \"model_type\": \"openai\", \"examples\": [{\"input\": \"Write a blog post intro about AI\", \"output\": \"Artificial Intelligence is revolutionizing how we work and interact with technology...\"}], \"additional_requirements\": \"Engaging and accessible tone\"}"
+      "content": {
+        "role": "content creators",
+        "basic_requirements": "创作引人入胜、结构清晰的博客文章和营销文案",
+        "model_type": "openai",
+        "examples": [
+          {
+            "input": "Write a blog post intro about AI",
+            "output": "Artificial Intelligence is revolutionizing how we work and interact with technology..."
+          }
+        ],
+        "additional_requirements": "Engaging and accessible tone"
+      }
     }
   ]
 }
@@ -198,37 +226,42 @@ python test_prompt_optimizer.py
 
 ## 📊 输出格式
 
-系统将返回结构化的优化结果：
-
-```markdown
-✅ **Prompt优化完成**
-
-🎯 **目标用户角色:** software developers
-🤖 **使用模型:** GEMINI
-📊 **处理示例数量:** 2
-
-📝 **生成的主要Prompt:**
-[优化后的prompt内容]
-
-🔍 **评估结果:**
-[详细的评估分析]
-
-🚀 **改进方案 (3个):**
-**方案1:** [重点改进领域]
-[改进后的prompt1]
-
-**方案2:** [重点改进领域]  
-[改进后的prompt2]
-
-**方案3:** [重点改进领域]
-[改进后的prompt3]
-
-💡 **最终推荐 (根据评估选择的最佳方案):**
-[推荐的最佳prompt版本]
-
----
-✨ **使用建议:** 您可以直接使用最终推荐的prompt，或根据具体需求选择其中一个改进方案。
+```json
+{
+  "role": "目标用户角色",
+  "basic_requirements": "基本任务要求",
+  "model_type": "使用的模型",
+  "original_examples": [
+    {
+      "input": "示例输入",
+      "output": "示例输出"
+    }
+  ],
+  "generated_prompt": "生成的初始prompt",
+  "evaluations": [
+    "评估结果1",
+    "评估结果2"
+  ],
+  "alternative_prompts": [
+    "改进方案1",
+    "改进方案2",
+    "改进方案3"
+  ],
+  "final_recommendation": "最终推荐的prompt",
+  "step": "completed"
+}
 ```
+
+## 📚 更多文档
+
+- [系统架构](ARCHITECTURE.md)
+- [API文档](API.md)
+- [开发指南](DEVELOPMENT.md)
+- [贡献指南](CONTRIBUTING.md)
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ## 🏗️ 架构设计
 

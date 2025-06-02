@@ -18,12 +18,12 @@ if __name__ == '__main__':
     basic_skill = AgentSkill(
         id='prompt_optimization',
         name='Prompt优化服务',
-        description='通过多Agent协作优化prompt，包括生成、评估和改进',
+        description='通过多Agent协作优化prompt，支持角色定义、基本要求和可选示例',
         tags=['prompt engineering', 'optimization', 'multi-agent'],
         examples=[
-            '为软件开发者优化代码生成prompt',
-            '为客服人员优化对话prompt',
-            '为内容创作者优化写作prompt'
+            '为软件开发者优化代码生成prompt，包含基本编码规范和最佳实践',
+            '为内容创作者优化写作prompt，定义创作风格和结构要求',
+            '为数据分析师优化数据处理prompt，设定分析标准和输出格式'
         ],
     )
     # --8<-- [end:AgentSkill]
@@ -31,12 +31,12 @@ if __name__ == '__main__':
     advanced_skill = AgentSkill(
         id='advanced_prompt_optimization',
         name='高级Prompt优化服务',
-        description='包含深度分析、多轮优化和自定义评估指标的高级prompt优化服务',
+        description='提供深度定制的prompt优化服务，包含详细的角色分析、任务分解和性能评估',
         tags=['prompt engineering', 'optimization', 'multi-agent', 'advanced', 'deep-analysis'],
         examples=[
-            '进行多轮迭代的prompt优化',
-            '基于特定业务场景的定制化优化',
-            '包含性能基准测试的prompt评估'
+            '基于详细的角色分析和任务要求进行多轮迭代优化',
+            '针对特定业务场景的深度定制，包含完整的任务分解和评估标准',
+            '结合性能指标和用户反馈的综合优化方案'
         ],
     )
 
@@ -44,13 +44,13 @@ if __name__ == '__main__':
     # 公开的agent卡片
     public_agent_card = AgentCard(
         name='Prompt优化器 Agent',
-        description='基于多Agent协作的智能Prompt优化系统，帮助用户生成、评估和改进各种场景下的prompt',
+        description='智能Prompt优化系统，支持角色定义、基本要求和示例，帮助用户生成高质量的prompt',
         url='http://localhost:9999/',
         version='1.0.0',
         defaultInputModes=['text'],
         defaultOutputModes=['text'],
         capabilities=AgentCapabilities(streaming=True),
-        skills=[basic_skill],  # 基础技能
+        skills=[basic_skill],
         supportsAuthenticatedExtendedCard=True,
     )
     # --8<-- [end:AgentCard]
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     extended_agent_card = public_agent_card.model_copy(
         update={
             'name': 'Prompt优化器 Agent - 专业版',
-            'description': '专业级Prompt优化系统，提供深度分析、多轮优化和定制化服务',
+            'description': '专业级Prompt优化系统，提供深度角色分析、任务分解和定制化优化服务',
             'version': '1.1.0',
             'skills': [
                 basic_skill,
