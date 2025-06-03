@@ -24,7 +24,7 @@
 | 模型提供商 | 模型名称 | 模型类型标识 | 配置要求 |
 |------------|----------|--------------|----------|
 | Google | Gemini 2.0 Flash | `gemini` | `GOOGLE_API_KEY` |
-| OpenAI | GPT-4o-mini | `openai` | `OPENAI_API_KEY` |
+| OpenAI | gpt-4o-2024-11-20 | `openai` | `OPENAI_API_KEY` |
 
 ## 🌐 代理配置
 

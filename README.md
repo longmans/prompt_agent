@@ -24,7 +24,7 @@ An intelligent Prompt optimization system based on multi-Agent collaboration, im
 | Provider | Model Name | Model Type ID | Configuration Required |
 |----------|------------|---------------|----------------------|
 | Google | Gemini 2.0 Flash | `gemini` | `GOOGLE_API_KEY` |
-| OpenAI | GPT-4o-mini | `openai` | `OPENAI_API_KEY` |
+| OpenAI | gpt-4o-2024-11-20 | `openai` | `OPENAI_API_KEY` |
 
 ## 🌐 Proxy Configuration
 

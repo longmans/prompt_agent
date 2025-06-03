@@ -185,7 +185,7 @@ class ModelFactory:
                 raise ValueError("OPENAI_API_KEY environment variable is required")
                 
             return ChatOpenAI(
-                model="gpt-4o-mini",
+                model="gpt-4o-2024-11-20",
                 api_key=api_key,
                 temperature=Config.MODEL_TEMPERATURE,
                 timeout=Config.REQUEST_TIMEOUT,
