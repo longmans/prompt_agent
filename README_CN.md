@@ -94,15 +94,28 @@ OPENAI_API_KEY=your_openai_api_key_here  # 可选
 # 服务器配置
 SERVER_HOST=0.0.0.0
 SERVER_PORT=9999
-LOG_LEVEL=info
-
-# 代理配置（可选，默认使用 http://127.0.0.1:7890）
-HTTPS_PROXY=http://127.0.0.1:7890
-HTTP_PROXY=http://127.0.0.1:7890
+WORKERS=4
+RELOAD=false
 
 # Web界面配置
 WEB_HOST=0.0.0.0
 WEB_PORT=7860
+
+# 日志配置
+LOG_LEVEL=info
+VERBOSE_LOGGING=false
+LOG_FILE_PATH=prompt_optimizer.log
+
+# 代理配置
+ENABLE_DEFAULT_PROXY=true
+HTTPS_PROXY=http://127.0.0.1:7890  # 可选，当 ENABLE_DEFAULT_PROXY=true 时使用
+HTTP_PROXY=http://127.0.0.1:7890    # 可选，当 ENABLE_DEFAULT_PROXY=true 时使用
+
+# 模型配置
+DEFAULT_MODEL_TYPE=openai
+MODEL_TEMPERATURE=0.7
+REQUEST_TIMEOUT=60
+MAX_RETRIES=3
 ```
 
 ### 启动服务
@@ -122,8 +135,9 @@ Web界面将在 http://localhost:7860 启动
 #### 开发模式
 ```bash
 # 启用热重载和调试日志
-export RELOAD=true
-export LOG_LEVEL=debug
+RELOAD=true
+LOG_LEVEL=debug
+VERBOSE_LOGGING=true
 python main.py
 ```
 

@@ -10,15 +10,80 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
+# 配置管理类
+class Config:
+    """配置管理类，用于集中管理所有配置参数"""
+    
+    @staticmethod
+    def get_bool(key: str, default: bool = False) -> bool:
+        """获取布尔类型配置"""
+        value = os.getenv(key, str(default)).lower()
+        return value in ('true', '1', 'yes', 'on')
+    
+    @staticmethod
+    def get_int(key: str, default: int) -> int:
+        """获取整数类型配置"""
+        try:
+            return int(os.getenv(key, str(default)))
+        except ValueError:
+            return default
+    
+    @staticmethod
+    def get_float(key: str, default: float) -> float:
+        """获取浮点数类型配置"""
+        try:
+            return float(os.getenv(key, str(default)))
+        except ValueError:
+            return default
+    
+    @staticmethod
+    def get_str(key: str, default: str) -> str:
+        """获取字符串类型配置"""
+        return os.getenv(key, default)
+    
+    # 服务器配置
+    SERVER_HOST = get_str("SERVER_HOST", "0.0.0.0")
+    SERVER_PORT = get_int("SERVER_PORT", 9999)
+    WORKERS = get_int("WORKERS", 1)
+    RELOAD = get_bool("RELOAD", False)
+    
+    # Web界面配置
+    WEB_HOST = get_str("WEB_HOST", "0.0.0.0")
+    WEB_PORT = get_int("WEB_PORT", 7860)
+    
+    # 日志配置
+    LOG_LEVEL = get_str("LOG_LEVEL", "info").upper()
+    VERBOSE_LOGGING = get_bool("VERBOSE_LOGGING", False)
+    LOG_FILE_PATH = get_str("LOG_FILE_PATH", "prompt_optimizer.log")
+    
+    # 代理配置
+    ENABLE_DEFAULT_PROXY = get_bool("ENABLE_DEFAULT_PROXY", True)
+    DEFAULT_PROXY = "http://127.0.0.1:7890"
+    
+    # 模型配置
+    DEFAULT_MODEL_TYPE = get_str("DEFAULT_MODEL_TYPE", "openai")
+    MODEL_TEMPERATURE = get_float("MODEL_TEMPERATURE", 0.7)
+    REQUEST_TIMEOUT = get_int("REQUEST_TIMEOUT", 60)
+    MAX_RETRIES = get_int("MAX_RETRIES", 3)
+    
+    # API配置
+    GOOGLE_API_KEY = get_str("GOOGLE_API_KEY", "")
+    OPENAI_API_KEY = get_str("OPENAI_API_KEY", "")
+
 # 配置日志
 logger = logging.getLogger(__name__)
 if not logger.handlers:  # 避免重复添加处理器
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
+    logger.setLevel(getattr(logging, Config.LOG_LEVEL))
+    handlers = [logging.StreamHandler()]
+    if Config.LOG_FILE_PATH:
+        handlers.append(logging.FileHandler(Config.LOG_FILE_PATH, encoding='utf-8'))
+    for handler in handlers:
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    
+    if Config.VERBOSE_LOGGING:
+        logger.setLevel(logging.DEBUG)
 
 # 状态管理
 class PromptOptimizerState(TypedDict):
@@ -49,8 +114,11 @@ class ModelFactory:
     _model_instances = {}  # 缓存模型实例以提高性能
     
     @staticmethod
-    def create_model(model_type: str = "gemini"):
+    def create_model(model_type: str = None):
         """根据模型类型创建相应的模型实例，支持实例缓存和代理配置"""
+        # 如果未指定模型类型，使用默认配置
+        model_type = model_type or Config.DEFAULT_MODEL_TYPE
+        
         # 使用缓存避免重复创建模型实例
         cache_key = f"{model_type.lower()}"
         if cache_key in ModelFactory._model_instances:
@@ -77,21 +145,34 @@ class ModelFactory:
     @staticmethod
     def _setup_proxy():
         """设置代理配置"""
-        # 从环境变量获取代理设置，如果没有则使用默认值
-        https_proxy = os.getenv("HTTPS_PROXY", "http://127.0.0.1:7890")
-        http_proxy = os.getenv("HTTP_PROXY", "http://127.0.0.1:7890")
-        
-        # 设置代理环境变量
-        if https_proxy and not os.environ.get("https_proxy"):
-            os.environ["https_proxy"] = https_proxy
-        if http_proxy and not os.environ.get("http_proxy"):
-            os.environ["http_proxy"] = http_proxy
+        try:
+            # 从环境变量获取代理设置
+            https_proxy = os.getenv("HTTPS_PROXY", "").strip()
+            http_proxy = os.getenv("HTTP_PROXY", "").strip()
             
-        # 确保代理设置对所有HTTP请求生效
-        if https_proxy:
-            os.environ["HTTPS_PROXY"] = https_proxy
-        if http_proxy:
-            os.environ["HTTP_PROXY"] = http_proxy
+            # 检查是否需要设置默认代理
+            if not https_proxy and not http_proxy:
+                if Config.ENABLE_DEFAULT_PROXY:
+                    https_proxy = http_proxy = Config.DEFAULT_PROXY
+                    logger.info(f"使用默认代理配置: {Config.DEFAULT_PROXY}")
+                else:
+                    logger.info("未启用代理")
+                    return
+            
+            # 设置代理环境变量
+            if https_proxy:
+                os.environ["HTTPS_PROXY"] = os.environ["https_proxy"] = https_proxy
+                logger.debug(f"设置HTTPS代理: {https_proxy}")
+            
+            if http_proxy:
+                os.environ["HTTP_PROXY"] = os.environ["http_proxy"] = http_proxy
+                logger.debug(f"设置HTTP代理: {http_proxy}")
+                
+        except Exception as e:
+            logger.warning(f"设置代理时出错: {str(e)}")
+            # 出错时清除所有代理设置
+            for key in ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy"]:
+                os.environ.pop(key, None)
     
     @staticmethod
     def _create_openai_model():
@@ -99,16 +180,16 @@ class ModelFactory:
         try:
             from langchain_openai import ChatOpenAI
             
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = Config.OPENAI_API_KEY
             if not api_key:
                 raise ValueError("OPENAI_API_KEY environment variable is required")
                 
             return ChatOpenAI(
                 model="gpt-4o-mini",
                 api_key=api_key,
-                temperature=0.7,
-                timeout=60,  # 设置超时时间
-                max_retries=3  # 设置重试次数
+                temperature=Config.MODEL_TEMPERATURE,
+                timeout=Config.REQUEST_TIMEOUT,
+                max_retries=Config.MAX_RETRIES
             )
         except ImportError:
             raise ImportError("Please install langchain-openai: pip install langchain-openai")
@@ -121,16 +202,16 @@ class ModelFactory:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             
-            api_key = os.getenv("GOOGLE_API_KEY")
+            api_key = Config.GOOGLE_API_KEY
             if not api_key:
                 raise ValueError("GOOGLE_API_KEY environment variable is required")
                 
             return ChatGoogleGenerativeAI(
                 model="gemini-2.0-flash-exp",
                 google_api_key=api_key,
-                temperature=0.7,
-                timeout=60,  # 设置超时时间
-                max_retries=3  # 设置重试次数
+                temperature=Config.MODEL_TEMPERATURE,
+                timeout=Config.REQUEST_TIMEOUT,
+                max_retries=Config.MAX_RETRIES
             )
         except ImportError:
             raise ImportError("Please install langchain-google-genai: pip install langchain-google-genai")

@@ -12,19 +12,35 @@ import os
 import logging
 from typing import Dict, List, Any, Iterator, Tuple, Optional
 from datetime import datetime
-from prompt_optimizer import PromptOptimizerWorkflow, PromptRequest, ModelFactory
 from dotenv import load_dotenv
-# 加载环境变量
+
+# 首先加载环境变量
 load_dotenv()
 
+# 然后导入依赖Config类
+from prompt_optimizer import PromptOptimizerWorkflow, PromptRequest, ModelFactory, Config
+
 # 配置日志
-logging.basicConfig(
-    level=logging.INFO if os.getenv('LOG_LEVEL').lower() != 'debug' else logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
-
-
+if not logger.handlers:  # 避免重复添加处理器
+    # 设置根日志级别
+    logging.basicConfig(
+        level=getattr(logging, Config.LOG_LEVEL),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(Config.LOG_FILE_PATH, mode='a', encoding='utf-8')
+        ] if Config.LOG_FILE_PATH else [logging.StreamHandler()]
+    )
+    
+    # 设置本模块的日志级别
+    logger.setLevel(getattr(logging, Config.LOG_LEVEL))
+    
+    # 如果启用了详细日志，设置为DEBUG级别
+    if Config.VERBOSE_LOGGING:
+        logger.setLevel(logging.DEBUG)
+        
+    logger.debug("日志配置完成，当前级别: %s", Config.LOG_LEVEL)
 
 class SessionState:
     """会话状态管理类，避免使用全局变量"""
@@ -128,7 +144,7 @@ class StreamingOptimizer:
             try:
                 guide_result = await self.workflow._generate_guide_node(initial_state)
                 initial_state.update(guide_result)
-                logger.debug("prompt工程指导生成完成")
+                logger.debug(f"prompt工程指导生成完成: {guide_result}")
             except Exception as e:
                 logger.warning(f"生成指导失败，使用默认配置: {str(e)}")
             
@@ -137,7 +153,7 @@ class StreamingOptimizer:
                 prompt_result = await self.workflow._generate_prompt_node(initial_state)
                 initial_state.update(prompt_result)
                 generated_prompt = initial_state.get('current_prompt', '')
-                logger.debug(f"初始prompt生成完成，长度: {len(generated_prompt)}")
+                logger.debug(f"初始prompt生成完成: {generated_prompt}") 
             except Exception as e:
                 logger.error(f"生成prompt失败: {str(e)}")
                 raise RuntimeError("生成prompt失败，请重试")
@@ -146,6 +162,7 @@ class StreamingOptimizer:
             try:
                 eval_guide_result = await self.workflow._generate_eval_guide_node(initial_state)
                 initial_state.update(eval_guide_result)
+                logger.debug(f"评估框架生成完成: {eval_guide_result}")
             except Exception as e:
                 logger.warning(f"评估框架准备失败: {str(e)}")
             
@@ -153,7 +170,7 @@ class StreamingOptimizer:
             try:
                 evaluation_result = await self.workflow._evaluate_prompt_node(initial_state)
                 initial_state.update(evaluation_result)
-                logger.debug("prompt评估完成")
+                logger.debug(f"prompt评估完成: {evaluation_result}")
             except Exception as e:
                 logger.warning(f"prompt评估失败: {str(e)}")
             
@@ -161,7 +178,7 @@ class StreamingOptimizer:
             try:
                 improvement_result = await self.workflow._improve_prompts_node(initial_state)
                 initial_state.update(improvement_result)
-                logger.debug(f"生成了 {len(initial_state.get('alternative_prompts', []))} 个改进方案")
+                logger.debug(f"生成了 {len(initial_state.get('alternative_prompts', []))} 个改进方案: {improvement_result}")
             except Exception as e:
                 logger.warning(f"生成改进方案失败: {str(e)}")
             
@@ -169,6 +186,7 @@ class StreamingOptimizer:
             try:
                 final_result = await self.workflow._finalize_node(initial_state)
                 initial_state.update(final_result)
+                logger.debug(f"最终确定完成: {final_result}")
             except Exception as e:
                 logger.error(f"最终确定失败: {str(e)}")
                 raise RuntimeError("最终确定失败，请重试")
@@ -194,7 +212,7 @@ class StreamingOptimizer:
             final_output = self._format_final_result(result)
             
             yield "✅ 完成", "Prompt优化已完成！", final_output
-            logger.info("优化流程成功完成")
+            logger.info(f"优化流程成功完成: {final_output}")
             
         except ValueError as e:
             error_msg = f"输入验证错误: {str(e)}"
@@ -415,11 +433,11 @@ def validate_inputs(role: str, basic_requirements: str, examples: str, model_typ
     # 验证API密钥
     try:
         if model_type.lower() == "gemini":
-            api_key = os.getenv('GOOGLE_API_KEY')
+            api_key = Config.GOOGLE_API_KEY
             if not api_key or api_key == 'your_google_api_key_here':
                 return "❌ 请先配置GOOGLE_API_KEY环境变量"
         elif model_type.lower() == "openai":
-            api_key = os.getenv('OPENAI_API_KEY')
+            api_key = Config.OPENAI_API_KEY
             if not api_key or api_key == 'your_openai_api_key_here':
                 return "❌ 请先配置OPENAI_API_KEY环境变量"
     except Exception as e:
@@ -840,25 +858,62 @@ with gr.Blocks(title="Prompt优化器 - Web界面", theme=gr.themes.Soft()) as a
 
 def main():
     """启动Web应用"""
+    logger.debug("正在启动Web应用 DEBUG 模式...")
     print("🚀 启动Prompt优化器Web界面...")
-    print("🌐 代理配置: 自动使用 http://127.0.0.1:7890")
-    print("📖 访问地址: http://localhost:7860")
+    
+    # 检查代理配置
+    if Config.ENABLE_DEFAULT_PROXY:
+        logger.debug("代理配置: 使用默认代理 %s", Config.DEFAULT_PROXY)
+        print(f"🌐 代理配置: 使用默认代理 {Config.DEFAULT_PROXY}")
+    elif os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY"):
+        logger.debug("代理配置: 使用自定义代理 HTTPS=%s, HTTP=%s", 
+                    os.getenv("HTTPS_PROXY"), os.getenv("HTTP_PROXY"))
+        print(f"🌐 代理配置: 使用自定义代理")
+        print(f"   HTTPS_PROXY: {os.getenv('HTTPS_PROXY')}")
+        print(f"   HTTP_PROXY: {os.getenv('HTTP_PROXY')}")
+    else:
+        logger.debug("代理配置: 未启用代理")
+        print("🌐 代理配置: 未启用代理")
+    
+    logger.debug("Web服务器配置: host=%s, port=%s", Config.WEB_HOST, Config.WEB_PORT)
+    print(f"📖 访问地址: http://{Config.WEB_HOST}:{Config.WEB_PORT}")
     
     # 检查环境
-    google_api_key = os.getenv('GOOGLE_API_KEY')
-    openai_api_key = os.getenv('OPENAI_API_KEY')
-    
+    logger.debug("检查API密钥配置...")
     print("\n🔑 API密钥状态:")
-    print(f"   Google (Gemini): {'✅ 已配置' if google_api_key and google_api_key != 'your_google_api_key_here' else '❌ 未配置'}")
-    print(f"   OpenAI (GPT): {'✅ 已配置' if openai_api_key and openai_api_key != 'your_openai_api_key_here' else '❌ 未配置'}")
+    gemini_status = '✅ 已配置' if Config.GOOGLE_API_KEY and Config.GOOGLE_API_KEY != 'your_google_api_key_here' else '❌ 未配置'
+    openai_status = '✅ 已配置' if Config.OPENAI_API_KEY and Config.OPENAI_API_KEY != 'your_openai_api_key_here' else '❌ 未配置'
+    print(f"   Google (Gemini): {gemini_status}")
+    print(f"   OpenAI (GPT): {openai_status}")
     
     print("\n💡 提示: 请确保至少配置一个API密钥以使用相应的模型")
     
-    app.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=False
-    )
+    try:
+        # 启动应用
+        logger.debug("正在启动Gradio应用...")
+        app.launch(
+            server_name=Config.WEB_HOST,
+            server_port=Config.WEB_PORT,
+            share=True
+        )
+    except OSError as e:
+        if "Cannot find empty port" in str(e):
+            logger.error("端口 %s 已被占用，尝试使用其他端口...", Config.WEB_PORT)
+            # 尝试使用其他端口
+            for port in range(Config.WEB_PORT, Config.WEB_PORT + 10):
+                try:
+                    logger.debug("尝试使用端口 %s", port)
+                    app.launch(
+                        server_name=Config.WEB_HOST,
+                        server_port=port,
+                        share=True
+                    )
+                    break
+                except OSError:
+                    continue
+        else:
+            logger.error("启动Web服务器时出错: %s", str(e))
+            raise
 
 if __name__ == "__main__":
     main() 

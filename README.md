@@ -94,15 +94,28 @@ OPENAI_API_KEY=your_openai_api_key_here  # Optional
 # Server configuration
 SERVER_HOST=0.0.0.0
 SERVER_PORT=9999
-LOG_LEVEL=info
-
-# Proxy configuration (optional, defaults to http://127.0.0.1:7890)
-HTTPS_PROXY=http://127.0.0.1:7890
-HTTP_PROXY=http://127.0.0.1:7890
+WORKERS=4
+RELOAD=false
 
 # Web interface configuration
 WEB_HOST=0.0.0.0
 WEB_PORT=7860
+
+# Logging configuration
+LOG_LEVEL=info
+VERBOSE_LOGGING=false
+LOG_FILE_PATH=prompt_optimizer.log
+
+# Proxy configuration
+ENABLE_DEFAULT_PROXY=true
+HTTPS_PROXY=http://127.0.0.1:7890  # Optional, used if ENABLE_DEFAULT_PROXY=true
+HTTP_PROXY=http://127.0.0.1:7890    # Optional, used if ENABLE_DEFAULT_PROXY=true
+
+# Model configuration
+DEFAULT_MODEL_TYPE=openai
+MODEL_TEMPERATURE=0.7
+REQUEST_TIMEOUT=60
+MAX_RETRIES=3
 ```
 
 ### Starting Services
@@ -122,8 +135,9 @@ Web interface will start at http://localhost:7860
 #### Development Mode
 ```bash
 # Enable hot reload and debug logging
-export RELOAD=true
-export LOG_LEVEL=debug
+RELOAD=true
+LOG_LEVEL=debug
+VERBOSE_LOGGING=true
 python main.py
 ```
 
